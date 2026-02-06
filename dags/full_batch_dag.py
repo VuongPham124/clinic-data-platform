@@ -11,7 +11,7 @@ import sys
 # ======================================================
 # Make repo root importable
 # ======================================================
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 
 # ======================================================
