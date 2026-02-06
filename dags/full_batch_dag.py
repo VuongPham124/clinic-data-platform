@@ -32,8 +32,7 @@ STAGING_BUCKET = "amaz-staging"
 QUARANTINE_BUCKET = "amaz-quarantine"
 
 CONTRACT_PATH = (
-    "/home/airflow/gcs/dags/contract/"
-    "staging_contract_snapshot_v1.json"
+    "gs://us-central1-wata-env-compos-7881c47e-bucket/dags/contract/staging_contract_snapshot_v1.json"
 )
 
 DEFAULT_ARGS = {
@@ -86,8 +85,7 @@ with DAG(
             },
             "pyspark_job": {
                 "main_python_file_uri": (
-                    "/home/airflow/gcs/dags/"
-                    "pipelines/raw_to_staging.py"
+                    "gs://us-central1-wata-env-compos-7881c47e-bucket/dags/pipelines/raw_to_staging.py"
                 ),
                 "properties": {
                     "spark.raw.bucket": RAW_BUCKET,
