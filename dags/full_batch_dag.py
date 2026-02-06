@@ -32,7 +32,7 @@ STAGING_BUCKET = "amaz-staging"
 QUARANTINE_BUCKET = "amaz-quarantine"
 
 CONTRACT_PATH = (
-    "/home/airflow/gcs/dags/contracts/"
+    "/home/airflow/gcs/dags/contract/"
     "staging_contract_snapshot_v1.json"
 )
 
