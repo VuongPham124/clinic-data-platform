@@ -23,6 +23,18 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Sync repo to Composer DAGs folder
+      - name: Sync DAG files
         run: |
-          gsutil -m rsync -r -d . gs://${{ secrets.COMPOSER_BUCKET }}/dags
+          gsutil -m rsync -r -d dags gs://${{ secrets.COMPOSER_BUCKET }}/dags
+
+      - name: Sync pipelines
+        run: |
+          gsutil -m rsync -r -d pipelines gs://${{ secrets.COMPOSER_BUCKET }}/dags/pipelines
+
+      - name: Sync contracts
+        run: |
+          gsutil -m rsync -r -d contract gs://${{ secrets.COMPOSER_BUCKET }}/dags/contract
+
+      - name: Sync dbt
+        run: |
+          gsutil -m rsync -r -d dbt gs://${{ secrets.COMPOSER_BUCKET }}/dags/dbt
