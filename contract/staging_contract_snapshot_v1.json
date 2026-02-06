@@ -1,0 +1,1364 @@
+{
+  "version": 1,
+  "layer": "staging",
+  "source": "snapshot",
+
+  "timezone": "Asia/Ho_Chi_Minh",
+  "timestamp_min_date": "1900-01-01",
+  "tables": {
+    "public.booking_events": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "type": "long",
+        "call_service": "long",
+        "metadata": "string"
+      }
+    },
+    "public.booking_feedbacks": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "booking_id",
+        "from_user_id",
+        "doctor_id",
+        "patient_id",
+        "message"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "from_user_id": "long",
+        "doctor_id": "long",
+        "patient_id": "long",
+        "message": "string"
+      }
+    },
+    "public.bookings": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "patient_id",
+        "doctor_id",
+        "doctor_working_slot_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "long",
+        "patient_id": "long",
+        "doctor_id": "long",
+        "doctor_working_slot_id": "long",
+        "medical_history_id": "long",
+        "major_id": "long",
+        "transaction_group_uuid": "string",
+        "from_time": "timestamp_tz",
+        "to_time": "timestamp_tz",
+        "price": "string",
+        "currency": "string",
+        "status": "long",
+        "call_now_status": "string",
+        "confirmed_at": "timestamp_tz",
+        "canceled_at": "timestamp_tz",
+        "canceled_by": "long",
+        "cancel_reason": "string",
+        "finished_at": "timestamp_tz",
+        "skyway_room_id": "string",
+        "chat_now_status": "string",
+        "conversation_id": "long",
+        "voucher_id": "long",
+        "patient_discount_amount": "string",
+        "patient_paying_amount": "string",
+        "doctor_earning_amount": "string",
+        "price_package_id": "long",
+        "chat_duration": "long",
+        "video_call_duration": "long",
+        "invoice_id": "long",
+        "service_vat": "string"
+      }
+    },
+    "public.clinic_booking_events": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "type": "long",
+        "call_service": "long",
+        "metadata": "string"
+      }
+    },
+    "public.clinic_booking_examinations": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "booking_id",
+        "exam_date"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "exam_date": "timestamp_tz",
+        "exam_status": "string"
+      }
+    },
+    "public.clinic_booking_feedbacks": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "booking_id",
+        "from_user_id",
+        "patient_id",
+        "message"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "from_user_id": "long",
+        "clinic_id": "long",
+        "patient_id": "long",
+        "message": "string"
+      }
+    },
+    "public.clinic_bookings": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "patient_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "long",
+        "patient_id": "long",
+        "clinic_id": "long",
+        "doctor_id": "long",
+        "medical_history_id": "long",
+        "transaction_group_uuid": "string",
+        "from_time": "timestamp_tz",
+        "to_time": "timestamp_tz",
+        "price": "string",
+        "currency": "string",
+        "exam_status": "string",
+        "payment_status": "string",
+        "payment_method": "string",
+        "voucher_id": "long",
+        "patient_discount_amount": "string",
+        "patient_paying_amount": "string",
+        "patient_remaining_amount": "string",
+        "clinic_earning_amount": "string",
+        "status": "long",
+        "confirmed_at": "timestamp_tz",
+        "canceled_at": "timestamp_tz",
+        "canceled_by": "long",
+        "cancel_reason": "string",
+        "finished_at": "timestamp_tz",
+        "booking_code": "string",
+        "booking_no": "string",
+        "description": "string",
+        "priority": "long",
+        "exam_date": "timestamp_tz",
+        "metadata": "string",
+        "health_record_id": "long",
+        "clinic_commission_fee": "decimal(38,9)",
+        "init_price": "decimal(38,9)",
+        "prescription_amount": "decimal(38,9)",
+        "created_by_status": "string",
+        "examination_type": "long",
+        "canceled_by_name": "string",
+        "invoice_id": "long",
+        "service_vat": "string",
+        "total_sub_services_amount": "string"
+      }
+    },
+    "public.clinic_doctors": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "full_name",
+        "clinic_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "full_name": "string",
+        "gender": "long",
+        "date_of_birth": "timestamp_tz",
+        "academic": "string",
+        "major_id": "long",
+        "phone_number": "string",
+        "email": "string",
+        "clinic_id": "long",
+        "code": "string",
+        "signature_id": "long",
+        "date": "long",
+        "month": "long",
+        "year": "long",
+        "clinic_user_id": "long",
+        "status": "long",
+        "ma_lien_thong_bac_si": "string"
+      }
+    },
+    "public.clinic_examination_templates": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "code": "string",
+        "clinic_id": "long",
+        "status": "string",
+        "major_id": "long",
+        "metadata": "string",
+        "name": "string"
+      }
+    },
+    "public.clinic_major_associates": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "clinic_id",
+        "major_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "clinic_id": "long",
+        "major_id": "long",
+        "note": "string"
+      }
+    },
+    "public.clinic_majors": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "name"
+      ],
+      "columns": {
+        "id": "int",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "name": "string",
+        "priority": "long",
+        "icon_url": "string",
+        "description": "string",
+        "name_en": "string"
+      }
+    },
+    "public.clinic_partner_accounts": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "string",
+        "clinic_id": "long",
+        "user_name": "string",
+        "clinic_service_code": "string",
+        "password": "string",
+        "tax_code": "string"
+      }
+    },
+    "public.clinic_patients": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "clinic_id",
+        "permission"
+      ],
+      "columns": {
+        "id": "int",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "clinic_id": "long",
+        "permission": "long"
+      }
+    },
+    "public.clinic_ratings": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "clinic_id",
+        "patient_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "long",
+        "clinic_id": "long",
+        "patient_id": "long",
+        "score": "decimal(38,9)",
+        "is_anonymous": "boolean",
+        "message": "string",
+        "booking_id": "long"
+      }
+    },
+    "public.clinic_rooms": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "clinic_id",
+        "room_name"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "clinic_id": "long",
+        "room_name": "string",
+        "doctor_id": "long",
+        "note": "string",
+        "code": "string"
+      }
+    },
+    "public.clinic_services": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "clinic_id",
+        "major_id",
+        "service_name",
+        "visible_on_app"
+      ],
+      "columns": {
+        "id": "int",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "clinic_id": "long",
+        "major_id": "long",
+        "service_name": "string",
+        "description": "string",
+        "code": "string",
+        "public_image_url": "string",
+        "status": "string",
+        "visible_on_app": "boolean"
+      }
+    },
+    "public.clinic_shifts": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "shift_id",
+        "name",
+        "clinic_id"
+      ],
+      "columns": {
+        "id": "long",
+        "shift_id": "int",
+        "name": "string",
+        "from": "string",
+        "to": "string",
+        "clinic_id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz"
+      }
+    },
+    "public.clinic_users": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "full_name",
+        "clinic_id",
+        "password"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "full_name": "string",
+        "gender": "long",
+        "date_of_birth": "timestamp_tz",
+        "role_id": "long",
+        "phone_number": "string",
+        "email": "string",
+        "clinic_id": "long",
+        "code": "string",
+        "signature_id": "long",
+        "status": "long",
+        "password": "string"
+      }
+    },
+    "public.clinics": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "cash_only"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "name": "string",
+        "address": "string",
+        "description": "string",
+        "longitude": "decimal(38,9)",
+        "latitude": "decimal(38,9)",
+        "images": "string",
+        "registration_type": "long",
+        "registration_status": "long",
+        "clinic_type": "long",
+        "cover_image": "string",
+        "open_time": "string",
+        "close_time": "string",
+        "clinic_hotline": "string",
+        "clinic_email": "string",
+        "tax_number": "string",
+        "is_active": "boolean",
+        "from_date_of_week": "string",
+        "to_date_of_week": "string",
+        "booking_count": "long",
+        "cash_only": "boolean",
+        "logo": "string",
+        "name_unaccented": "string",
+        "contract_url": "string",
+        "clinic_profile_url": "string",
+        "is_address_be_converted": "boolean",
+        "service_vat": "string"
+      }
+    },
+    "public.doctor_majors": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "name"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "name": "string",
+        "priority": "long",
+        "icon_url": "string",
+        "name_en": "string"
+      }
+    },
+    "public.doctor_working_schedules": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "doctor_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "doctor_id": "long",
+        "from_time": "timestamp_tz",
+        "to_time": "timestamp_tz"
+      }
+    },
+    "public.doctor_working_slots": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "doctor_id",
+        "doctor_working_schedule_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "doctor_id": "long",
+        "doctor_working_schedule_id": "long",
+        "from_time": "timestamp_tz",
+        "to_time": "timestamp_tz",
+        "is_used": "boolean"
+      }
+    },
+    "public.doctors": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "price_package_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "tax_number": "string",
+        "practising_certificate_id": "string",
+        "consulted_time": "long",
+        "chat_consulted_time": "long",
+        "call_consulted_time": "long",
+        "introduction": "string",
+        "clinic_address": "string",
+        "heard_about_amaz_from": "string",
+        "registration_type": "long",
+        "registration_status": "long",
+        "experience_year": "long",
+        "level": "string",
+        "price_package_id": "long",
+        "approval_event": "string",
+        "service_vat": "string"
+      }
+    },
+    "public.drug_details": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "int",
+        "mathuoc": "string",
+        "tenthuoc": "string",
+        "sodangky": "string",
+        "sodangkycu": "string",
+        "hoatchathamluong": "string",
+        "dangbaoche": "string",
+        "donggoi": "string",
+        "tieuchuan": "string",
+        "tieuchuanid": "int",
+        "tuoitho": "string",
+        "tencongtydangky": "string",
+        "nuocdangkyid": "int",
+        "nuocdangky": "string",
+        "diachidangky": "string",
+        "tencongtysanxuat": "string",
+        "nuocsanxuat": "string",
+        "diachisanxuat": "string",
+        "nuocsanxuatid": "int",
+        "dotcap": "string",
+        "ngaycapsodangky": "timestamp_tz",
+        "soquyetdinh": "string",
+        "hoatchatchinh": "string",
+        "messageerror": "string",
+        "thongtinthuoccoban_loaithuocid": "int",
+        "thongtinthuoccoban_nhomthuocid": "int",
+        "tenhoatchatchinh": "string",
+        "hoatchatdangky": "string",
+        "hamluong": "string",
+        "hangsanxuat": "string",
+        "donvitinh": "string",
+        "giadangky": "decimal(38,9)",
+        "tenkhongdau": "string",
+        "cososanxuat": "string",
+        "ketqua": "string",
+        "isluongcapnhat": "boolean",
+        "ishethan": "boolean",
+        "listnoidungthaydoi": "string",
+        "thongtinrutsodangky": "string",
+        "thongtintailieu": "string",
+        "thuockiemsoatdacbiet": "string",
+        "vacxinsinhpham": "string",
+        "thongtindangkythuoc_ngaycapsodangky": "timestamp_tz",
+        "thongtindangkythuoc_ngaygiahansodangky": "timestamp_tz",
+        "thongtindangkythuoc_ngayhethansodangky": "timestamp_tz",
+        "thongtindangkythuoc_soquyetdinh": "string",
+        "thongtindangkythuoc_urlsoquyetdinh": "string",
+        "thongtindangkythuoc_dotcap": "string",
+        "thongtindangkythuoc_iscapnhatnhhsdk": "boolean",
+        "thongtinthuoccoban_hoatchathamluong": "string",
+        "thongtinthuoccoban_hoatchatchinh": "string",
+        "thongtinthuoccoban_hoatchatchinhid": "int",
+        "thongtinthuoccoban_hamluong": "string",
+        "thongtinthuoccoban_dangbaoche": "string",
+        "thongtinthuoccoban_dangbaocheid": "int",
+        "thongtinthuoccoban_donggoi": "string",
+        "thongtinthuoccoban_donggoijson": "string",
+        "thongtinthuoccoban_maduongdung": "string",
+        "thongtinthuoccoban_tenduongdung": "string",
+        "thongtinthuoccoban_tieuchuan": "string",
+        "thongtinthuoccoban_tieuchuanid": "int",
+        "thongtinthuoccoban_tuoitho": "string",
+        "thongtinthuoccoban_loaithuoc": "string",
+        "thongtinthuoccoban_nhomthuoc": "string",
+        "congtysanxuatid": "int",
+        "congtysanxuat_tencongtysanxuat": "string",
+        "congtysanxuat_diachisanxuat": "string",
+        "congtysanxuat_nuocsanxuat": "string",
+        "congtysanxuat_nuocsanxuatid": "int",
+        "congtydangkyid": "int",
+        "congtydangky_tencongtydangky": "string",
+        "congtydangky_diachidangky": "string",
+        "congtydangky_nuocdangky": "string",
+        "congtydangky_nuocdangkyid": "int",
+        "phanloaithuocenum": "int",
+        "ghichu": "string",
+        "isactive": "boolean",
+        "nguondulieuenum": "string",
+        "trangthai": "string",
+        "lydosuadoi": "string",
+        "doanhnghiepid": "int",
+        "mstdoanhnghiep": "string",
+        "isxacnhansohuudoanhnghiep": "boolean",
+        "isdarutsodangky": "boolean",
+        "masohosogiahan": "string",
+        "ngaytiepnhanhsgiahan": "timestamp_tz",
+        "urlgiaytiepnhangiahan": "string",
+        "isduocphep": "boolean",
+        "isdeleted": "boolean",
+        "deleteruserid": "int",
+        "deletiontime": "timestamp_tz",
+        "lastmodificationtime": "timestamp_tz",
+        "lastmodifieruserid": "int",
+        "creationtime": "timestamp_tz",
+        "creatoruserid": "int"
+      }
+    },
+    "public.health_records": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "booking_id",
+        "patient_id",
+        "doctor_id",
+        "patient_name",
+        "doctor_name"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "booking_id": "long",
+        "patient_id": "long",
+        "doctor_id": "long",
+        "completed": "boolean",
+        "patient_name": "string",
+        "patient_age": "long",
+        "patient_gender": "long",
+        "doctor_name": "string",
+        "tien_can": "string",
+        "medical_history": "string",
+        "subclinical_diagnosis": "string",
+        "diagnosis": "string",
+        "suggestion": "string",
+        "doctor_level": "string",
+        "clinic_id": "long",
+        "clinic_name": "string",
+        "clinic_major_id": "long",
+        "suggest_appointment_time": "timestamp_tz",
+        "clinic_major_name": "string",
+        "health_record_type": "string",
+        "clinic_metadata": "string",
+        "type": "string",
+        "icd10_code": "string",
+        "icd10_name": "string"
+      }
+    },
+    "public.icd10_diagnoses": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "health_record_id": "long",
+        "name": "string",
+        "code": "string",
+        "is_primary": "boolean",
+        "name_en": "string"
+      }
+    },
+    "public.inventory_deliveries": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "clinic_id": "long",
+        "prescription_id": "long",
+        "note": "string",
+        "delivery_date": "timestamp_tz",
+        "status": "string",
+        "buyer_name": "string",
+        "patient_id": "long",
+        "created_delivery_by_id": "long",
+        "approve_delivery_by_id": "long",
+        "code": "string"
+      }
+    },
+    "public.medical_histories": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "description": "string",
+        "diagnosis": "string"
+      }
+    },
+    "public.medicine_import_details": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "clinic_id",
+        "medicine_import_id",
+        "lot_number",
+        "medicine_id",
+        "expire_date",
+        "import_price",
+        "status"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "medicine_import_id": "long",
+        "lot_number": "string",
+        "medicine_id": "long",
+        "total": "long",
+        "manufacturing_date": "timestamp_ntz",
+        "expire_date": "timestamp_ntz",
+        "import_price": "string",
+        "init_total": "long",
+        "status": "string"
+      }
+    },
+    "public.medicine_imports": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "status"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "code": "string",
+        "import_date": "timestamp_ntz",
+        "import_by": "long",
+        "note": "string",
+        "status": "string"
+      }
+    },
+    "public.medicines": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "clinic_id": "long",
+        "name": "string",
+        "code": "string",
+        "dqg_code": "string",
+        "type": "string",
+        "active_element": "string",
+        "concentration": "string",
+        "group": "string",
+        "packing": "string",
+        "unit": "string",
+        "usage": "string",
+        "price": "string",
+        "total": "long",
+        "country_of_origin": "string",
+        "manufacturer": "string",
+        "total_import": "long",
+        "total_export": "long",
+        "unit_using": "string",
+        "route_using": "string",
+        "vat": "string"
+      }
+    },
+    "public.metrics": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "time_frame",
+        "key"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "string",
+        "time_frame": "timestamp_tz",
+        "key": "string",
+        "value": "decimal(38,9)"
+      }
+    },
+    "public.notification_logs": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "type": "string",
+        "sub_type": "string",
+        "group_id": "string",
+        "read": "boolean",
+        "last_read_at": "timestamp_tz",
+        "detail": "string",
+        "meta": "string",
+        "clinic_id": "long"
+      }
+    },
+    "public.outside_prescription_medicines": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "prescription_id": "long",
+        "total": "long",
+        "price": "string",
+        "unit_price": "string",
+        "medicine_id": "long",
+        "usage": "string",
+        "day_of_use": "long"
+      }
+    },
+    "public.patients": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "registration_status": "long",
+        "registration_type": "long",
+        "guardian_name": "string",
+        "guardian_year_birthday": "long",
+        "guardian_phone_number": "string"
+      }
+    },
+    "public.prescription_medicine_details": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "clinic_id",
+        "medicine_import_detail_id",
+        "prescription_medicine_id",
+        "quantity",
+        "quantity_before",
+        "quantity_after"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "medicine_import_detail_id": "long",
+        "prescription_medicine_id": "long",
+        "quantity": "long",
+        "quantity_before": "long",
+        "quantity_after": "long"
+      }
+    },
+    "public.prescription_medicines": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "prescription_id": "long",
+        "total": "long",
+        "price": "string",
+        "unit_price": "string",
+        "medicine_id": "long",
+        "usage": "string",
+        "day_of_use": "long",
+        "price_included_vat": "string",
+        "vat": "string",
+        "vat_amount": "string"
+      }
+    },
+    "public.prescriptions": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "patient_id",
+        "booking_id",
+        "doctor_id",
+        "price"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_ntz",
+        "updated_at": "timestamp_ntz",
+        "deleted_at": "timestamp_ntz",
+        "clinic_id": "long",
+        "patient_id": "long",
+        "booking_id": "long",
+        "doctor_id": "long",
+        "price": "decimal(38,9)",
+        "day_of_use": "long",
+        "doctor_advice": "string",
+        "re_examination_date": "timestamp_ntz",
+        "allergy": "string",
+        "buyer_name": "string",
+        "payment_status": "string",
+        "status": "string",
+        "price_included_vat": "string",
+        "vat_amount": "string",
+        "type": "long",
+        "times_using": "string",
+        "from_date": "timestamp_tz",
+        "to_date": "timestamp_tz"
+      }
+    },
+    "public.ratings": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "doctor_id",
+        "patient_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "long",
+        "doctor_id": "long",
+        "patient_id": "long",
+        "score": "decimal(38,9)",
+        "is_anonymous": "boolean",
+        "message": "string"
+      }
+    },
+    "public.subclinical_results": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "clinic_id",
+        "patient_id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "long",
+        "clinic_id": "long",
+        "patient_id": "long",
+        "note": "string",
+        "metadata": "string",
+        "booking_id": "long",
+        "name": "string"
+      }
+    },
+    "public.transactions": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "transaction_uuid",
+        "transaction_group_uuid",
+        "transaction_type",
+        "transaction_status"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "transaction_uuid": "string",
+        "transaction_group_uuid": "string",
+        "transaction_type": "string",
+        "transaction_sub_type": "string",
+        "transaction_action": "string",
+        "transaction_status": "string",
+        "source_type": "string",
+        "source_id": "string",
+        "source_info": "string",
+        "destination_type": "string",
+        "destination_id": "string",
+        "destination_info": "string",
+        "from_wallet_id": "long",
+        "to_wallet_id": "long",
+        "from_user_id": "long",
+        "to_user_id": "long",
+        "amount": "decimal(38,9)",
+        "fee_amount": "decimal(38,9)",
+        "currency": "string",
+        "wallet_balance_before": "decimal(38,9)",
+        "wallet_balance_after": "decimal(38,9)",
+        "ref_1": "string",
+        "ref_2": "string",
+        "metadata": "string",
+        "is_internal_tx": "boolean",
+        "error_code": "string",
+        "error_message": "string",
+        "error_raw": "string",
+        "discount_amount": "decimal(38,9)",
+        "booking_id": "long",
+        "transaction_booking_type": "string"
+      }
+    },
+    "public.user_voucher_associates": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "voucher_id",
+        "status"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "voucher_id": "long",
+        "status": "string",
+        "used_at": "timestamp_tz"
+      }
+    },
+    "public.users": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "role",
+        "phone_number",
+        "gender",
+        "status",
+        "password",
+        "uuid"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "role": "long",
+        "phone_number": "string",
+        "full_name": "string",
+        "email": "string",
+        "citizen_id": "string",
+        "gender": "long",
+        "status": "long",
+        "date_of_birth": "timestamp_tz",
+        "address": "string",
+        "password": "string",
+        "uuid": "string",
+        "avatar_url": "string",
+        "rating": "decimal(38,9)",
+        "rated_time": "long",
+        "last_login_at": "timestamp_tz",
+        "conversation_status": "long",
+        "firebase_uid": "string",
+        "firebase_sns": "string",
+        "full_name_unaccented": "string",
+        "academic": "string",
+        "nation": "string",
+        "profession": "string",
+        "city_code": "string",
+        "district_code": "string",
+        "ward_code": "string",
+        "religion": "string",
+        "job": "string",
+        "city_name": "string",
+        "district_name": "string",
+        "ward_name": "string",
+        "street_number": "string",
+        "marital_status": "long",
+        "date": "long",
+        "month": "long",
+        "year": "long",
+        "is_first_time_login": "boolean",
+        "fcm_token": "string",
+        "pushkit_token": "string",
+        "device_os": "long",
+        "delete_reason": "string",
+        "last_conversation_status": "long",
+        "is_address_be_converted": "boolean"
+      }
+    },
+    "public.vital_signs": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "hypothermia": "decimal(38,9)",
+        "height": "decimal(38,9)",
+        "weight": "decimal(38,9)",
+        "heartbeat": "long",
+        "blood_group": "string",
+        "bmi": "decimal(38,9)",
+        "date_of_measurement": "timestamp_tz",
+        "rh_blood_group": "string",
+        "blood_sugar": "decimal(38,9)",
+        "spo2": "decimal(38,9)",
+        "pressure": "string"
+      }
+    },
+    "public.vouchers": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "type",
+        "redeem_code",
+        "name_vi",
+        "status",
+        "from_time",
+        "to_time",
+        "apply_for",
+        "maximum_discount_value"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "type": "string",
+        "redeem_code": "string",
+        "name_vi": "string",
+        "description_vi": "string",
+        "image_url": "string",
+        "status": "string",
+        "from_time": "timestamp_tz",
+        "to_time": "timestamp_tz",
+        "apply_for": "string",
+        "original_quota": "long",
+        "used": "long",
+        "discount_type": "string",
+        "discount_value": "decimal(38,9)",
+        "discount_unit": "string",
+        "maximum_discount_value": "decimal(38,9)"
+      }
+    },
+    "public.wallet_partners": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "wallet_id",
+        "type"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "wallet_id": "long",
+        "type": "string",
+        "info": "string",
+        "is_default": "boolean"
+      }
+    },
+    "public.wallets": {
+      "primary_key": [
+        "id"
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "cash_income_amount",
+        "total_commission_amount",
+        "total_prescription_amount"
+      ],
+      "columns": {
+        "id": "long",
+        "created_at": "timestamp_tz",
+        "updated_at": "timestamp_tz",
+        "deleted_at": "timestamp_tz",
+        "user_id": "long",
+        "balance": "decimal(38,9)",
+        "currency": "string",
+        "deposited_amount": "decimal(38,9)",
+        "spent_amount": "decimal(38,9)",
+        "net_income_amount": "decimal(38,9)",
+        "withdrawn_amount": "decimal(38,9)",
+        "cash_income_amount": "decimal(38,9)",
+        "total_commission_amount": "decimal(38,9)",
+        "total_prescription_amount": "decimal(38,9)"
+      }
+    }
+  }
+}
