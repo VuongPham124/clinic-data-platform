@@ -8,6 +8,7 @@ import argparse
 import psycopg2
 from datetime import datetime, timezone
 from google.cloud import storage
+from airflow.hooks.base import BaseHook
 
 # =====================================================
 # LOGGING
@@ -27,12 +28,14 @@ SOURCE = "snapshot"
 # =====================================================
 # POSTGRES CONFIG
 # =====================================================
+conn = BaseHook.get_connection("postgres_source")
+
 PG_CONN = {
-    "host": os.getenv("PG_HOST"),
-    "port": int(os.getenv("PG_PORT", 5432)),
-    "dbname": os.getenv("PG_DB"),
-    "user": os.getenv("PG_USER"),
-    "password": os.getenv("PG_PASSWORD"),
+    "host": conn.host,
+    "port": conn.port,
+    "dbname": conn.schema,
+    "user": conn.login,
+    "password": conn.password,
 }
 
 SCHEMA = "public"
