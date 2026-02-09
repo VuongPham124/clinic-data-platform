@@ -1,0 +1,12 @@
+clinic:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      threads: 16
+      database: wata-clinicdataplatform-gcp
+      schema: revenue
+      method: service-account
+      keyfile: gcs.json 
+      location: us-central1
+      dataproc_batch: null
