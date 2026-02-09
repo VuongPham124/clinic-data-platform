@@ -1,4 +1,4 @@
-import json, tempfile, os
+import json, tempfile, os, subprocess
 from datetime import datetime
 from pyspark.sql.functions import max as spark_max
 
@@ -23,7 +23,7 @@ def write_manifest(path: str, payload: dict):
     with tempfile.NamedTemporaryFile("w", delete=False) as f:
         json.dump(payload, f, indent=2)
         tmp = f.name
-    os.system(f"gsutil cp {tmp} {path}")
+    subprocess.run(["gsutil", "cp", tmp, path], check=True)
 
 from pyspark.sql.functions import col, lit, when, current_timestamp, input_file_name
 
