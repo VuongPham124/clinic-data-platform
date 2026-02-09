@@ -1,0 +1,8 @@
+SELECT
+  date AS date_key,
+  EXTRACT(YEAR FROM date) AS year,
+  EXTRACT(MONTH FROM date) AS month,
+  EXTRACT(QUARTER FROM date) AS quarter,
+  EXTRACT(WEEK FROM date) AS week,
+  EXTRACT(DAYOFWEEK FROM date) AS day_of_week
+FROM UNNEST(GENERATE_DATE_ARRAY('2020-01-01', '2030-12-31')) AS date

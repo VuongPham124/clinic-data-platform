@@ -1,0 +1,14 @@
+name: 'clinic_data'
+version: '1.0.0'
+config-version: 2
+
+profile: 'clinic'
+
+model-paths: ["models"]
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  clinic_data:
+    +materialized: table
