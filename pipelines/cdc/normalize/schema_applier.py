@@ -13,7 +13,8 @@ SPARK_TYPE_MAP = {
 def apply_schema_casting(df, table_cfg):
     for c, t in table_cfg.get("schema", {}).items():
         if c in df.columns:
-            df = df.withColumn(c, col(c).cast(SPARK_TYPE_MAP[t]))
+            spark_type = SPARK_TYPE_MAP.get(t, t)
+            df = df.withColumn(c, col(c).cast(spark_type))
     return df
 
 
