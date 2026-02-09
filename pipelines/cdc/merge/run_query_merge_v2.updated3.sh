@@ -46,6 +46,20 @@ echo "[INFO] RUN_ID=${RUN_ID}"
 echo "[INFO] CONTRACT_PATH=${CONTRACT_PATH}"
 echo "[INFO] ONLY_TABLE=${ONLY_TABLE:-<all>}"  # ADDED
 
+# ---------- Input validation (avoid SQL injection / unsafe identifiers) ----------
+if [[ ! "${SRC_DATE}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+  echo "[FATAL] SRC_DATE must be YYYY-MM-DD. Got: ${SRC_DATE}"
+  exit 2
+fi
+if [[ ! "${RUN_ID}" =~ ^[a-z0-9_]+$ ]]; then
+  echo "[FATAL] RUN_ID contains invalid characters. Allowed: [a-z0-9_]"
+  exit 2
+fi
+if [ -n "${ONLY_TABLE}" ] && [[ ! "${ONLY_TABLE}" =~ ^[A-Za-z0-9_]+$ ]]; then
+  echo "[FATAL] ONLY_TABLE contains invalid characters. Allowed: [A-Za-z0-9_]"
+  exit 2
+fi
+
 # ---------- Validate contract ----------
 if [ ! -f "${CONTRACT_PATH}" ]; then
   echo "[FATAL] Contract file not found: ${CONTRACT_PATH}"
@@ -112,9 +126,24 @@ def cols(cfg):
         return out
     return []
 
+import re
+safe_ident = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+def validate_ident_list(values, kind, table_name):
+    bad = [v for v in values if not safe_ident.match(v)]
+    if bad:
+        raise SystemExit(f"Invalid {kind} in contract for {table_name}: {bad}")
+
 for t,cfg in tables.items():
+    # Validate table identifier and all column names to prevent SQL injection
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?", t):
+        raise SystemExit(f"Invalid table name in contract: {t}")
     # ADDED: decimal_fields (Option A) for numeric casting in Silver merge
     dec_fields = (cfg.get("decimal_fields") or [])
+    validate_ident_list(pk(cfg), "primary_key", t)
+    validate_ident_list(cols(cfg), "columns", t)
+    validate_ident_list((cfg.get("timestamp_fields") or []), "timestamp_fields", t)
+    validate_ident_list(dec_fields, "decimal_fields", t)
     print(
         t.replace(".","_"),
         ",".join(pk(cfg)),
