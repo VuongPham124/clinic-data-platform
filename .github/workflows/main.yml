@@ -3,7 +3,7 @@ name: Deploy code to Cloud Composer DAGs bucket
 on:
   push:
     branches:
-      - feature/add_cdc_pipeline
+      - feature/add_cdc_pipeline #test
       - test-cicd
 
 jobs:
