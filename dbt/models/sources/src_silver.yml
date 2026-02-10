@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: silver
+    database: wata-clinicdataplatform-gcp
+    schema: silver_curated
+    tables:
+      - name: clinic_bookings
+        identifier: public_clinic_bookings
+      - name: clinics
+        identifier: public_clinics
+      - name: clinic_doctors
+        identifier: public_clinic_doctors
+      - name: clinic_patients
+        identifier: public_clinic_patients
+      - name: clinic_rooms
+        identifier: public_clinic_rooms

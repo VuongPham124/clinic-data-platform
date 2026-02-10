@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: gold_clinic_doctor_operational_efficiency_weekly
+    columns:
+      - name: id
+        tests:
+          - not_null
+          # - unique
+
+      - name: clinic_key
+        tests:
+          - not_null
+
+
+      - name: week_start_date_key
+        tests:
+          - not_null
+
+  - name: gold_clinic_visits_doctor_monthly
+    columns:
+      - name: id
+        tests:
+          - not_null
+          # - unique
+
+      - name: clinic_key
+        tests:
+          - not_null
+
+      - name: month_start_date_key
+        tests:
+          - not_null
+
+  - name: gold_clinic_patient_visits_monthly
+    columns:
+      - name: id
+        tests:
+          - not_null
+          # - unique
+
+      - name: clinic_key
+        tests:
+          - not_null
+
+      - name: month_start_date_key
+        tests:
+          - not_null
