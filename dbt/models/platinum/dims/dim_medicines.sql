@@ -1,0 +1,37 @@
+{{ config(materialized='table') }}
+
+with src as (
+  select
+    cast(id as int64) as medicine_id,
+    cast(name as string) as medicine_name,
+    cast(code as string) as code,
+    cast(type as string) as type,
+    cast(group as string) as group,
+    cast (unit as string) as unit,
+    cast (manufacturer as string) as manufacturer,
+    cast (vat as int64) as vat,
+  from {{ source('silver', 'medicines') }}
+),
+dedup as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (partition by medicine_id order by medicine_name) as rn
+    from src
+  )
+  where rn = 1
+)
+
+select
+  abs(farm_fingerprint(cast(medicine_id as string))) as medicine_key,
+  medicine_id,
+  medicine_name,
+  code,
+  type,
+  group,
+  unit,
+  manufacturer,
+  vat
+from dedup
+where medicine_id is not null

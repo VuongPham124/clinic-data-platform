@@ -20,9 +20,9 @@ dedup as (
 )
 
 select
-  abs(farm_fingerprint(cast(room_id as string))) as room_key,
   abs(farm_fingerprint(cast(clinic_id as string))) as clinic_key,
   abs(farm_fingerprint(cast(doctor_id as string))) as doctor_key,
+  room_id,
   room_name
 from dedup
 where room_id is not null

@@ -49,7 +49,7 @@ bk as (
 select
   bk.*,
   -- room_key derived from clinic_key + doctor_key mapping
-  r.room_key
+  r.room_id
 from bk
 left join {{ ref('dim_clinic_rooms') }} r
   on r.clinic_key = bk.clinic_key
