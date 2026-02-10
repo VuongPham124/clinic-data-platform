@@ -44,6 +44,9 @@ with DAG(
         f"{DAGS_GCS}/contract/silver_curated_business_rules_v1.json"
         if DAGS_GCS else None
     )
+    # Localized filenames (Dataproc will download via file_uris)
+    CONTRACT_LOCAL = "cdc_merge_contract_v1.json"
+    RULES_LOCAL = "silver_curated_business_rules_v1.json"
 
     TEMP_GCS_BUCKET = os.environ.get("TEMP_GCS_BUCKET") or "amaz-staging"
     if TEMP_GCS_BUCKET.startswith("gs://"):
@@ -64,6 +67,7 @@ with DAG(
             "placement": {"cluster_name": CLUSTER_NAME},
             "pyspark_job": {
                 "main_python_file_uri": MAIN_PY_GCS,
+                "file_uris": [CONTRACT_GCS, RULES_GCS] if DAGS_GCS else [],
                 "properties": {
                     "spark.sql.debug.maxToStringFields": "2000",
                 },
@@ -73,8 +77,8 @@ with DAG(
                     "--curated_dataset", CURATED_DATASET,
                     "--quarantine_dataset", QUARANTINE_DATASET,
                     "--dq_dataset", DQ_DATASET,
-                    "--contract_path", CONTRACT_GCS,
-                    "--rules_json_path", RULES_GCS,
+                    "--contract_path", CONTRACT_LOCAL,
+                    "--rules_json_path", RULES_LOCAL,
                     "--temp_gcs_bucket", TEMP_GCS_BUCKET,
                     "--tables", "ALL",
                     "--exclude_deleted", "true",
