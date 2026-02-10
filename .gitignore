@@ -211,3 +211,4 @@ logs/
 dbt/logs/
 dbt/target/
 dbt/dbt_internal_packages/
+dbt/dbt_packages/
