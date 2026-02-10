@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - feature/add_cdc_pipeline #testagain
-      - curated_rules_silver #testcurated
+      - feature/curated_rules_silver #testcurated
       - test-cicd
 
 jobs:
