@@ -341,9 +341,9 @@ def main():
         pk_cols = contract_tables[ct].get("primary_key") or global_cfg.get("primary_key_default") or ["id"]
 
         bq_table = contract_table_to_bq_name(ct)
-        src = f"{args.project}:{args.silver_dataset}.{bq_table}"
-        dst = f"{args.project}:{args.curated_dataset}.{bq_table}"
-        q_dst = f"{args.project}:{args.quarantine_dataset}.{bq_table}__quarantine"
+        src = f"{args.project}.{args.silver_dataset}.{bq_table}"
+        dst = f"{args.project}.{args.curated_dataset}.{bq_table}"
+        q_dst = f"{args.project}.{args.quarantine_dataset}.{bq_table}__quarantine"
 
         print(f"\n=== Processing {ct} ===")
         print(f"READ : {src}")
