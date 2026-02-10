@@ -308,6 +308,7 @@ def main():
     parser.add_argument("--temp_gcs_bucket", required=True)
     parser.add_argument("--tables", default="ALL")
     parser.add_argument("--exclude_deleted", default="true")
+    parser.add_argument("--skip_missing_tables", default="true")
     args = parser.parse_args()
 
     contract = load_contract(args.contract_path)
@@ -329,6 +330,7 @@ def main():
         selected = [t.strip() for t in args.tables.split(",") if t.strip()]
 
     exclude_deleted = str(args.exclude_deleted).strip().lower() == "true"
+    skip_missing_tables = str(args.skip_missing_tables).strip().lower() == "true"
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     metrics_rows = []
@@ -350,7 +352,17 @@ def main():
         print(f"WRITE: {dst}")
         print(f"BAD  : {q_dst}")
 
-        df = spark.read.format("bigquery").option("table", src).load()
+        try:
+            df = (spark.read.format("bigquery")
+                  .option("table", src)
+                  .option("project", args.project)
+                  .load())
+        except Exception as e:
+            msg = str(e)
+            if skip_missing_tables:
+                print(f"[WARN] Skip table read failure for {src}: {e.__class__.__name__}: {msg}")
+                continue
+            raise
 
         # Soft delete canonical handling (KEPT v2)
         if exclude_deleted and "is_deleted" in df.columns:
