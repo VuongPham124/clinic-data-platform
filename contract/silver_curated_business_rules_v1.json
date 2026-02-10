@@ -26,8 +26,7 @@
             "value": "UNKNOWN"
           },
           "dq_checks": [
-            "length>0",
-            "gt0"
+            "length>0"
           ]
         },
         "address": {
@@ -93,7 +92,7 @@
         },
         "deleted_at": {
           "null_policy": {
-            "mode": "NOT_NULL"
+            "mode": "ALLOW_NULL"
           },
           "dq_checks": []
         }
@@ -129,7 +128,7 @@
         },
         "deleted_at": {
           "null_policy": {
-            "mode": "NOT_NULL"
+            "mode": "ALLOW_NULL"
           },
           "dq_checks": []
         }
@@ -172,7 +171,7 @@
         },
         "deleted_at": {
           "null_policy": {
-            "mode": "NOT_NULL"
+            "mode": "ALLOW_NULL"
           },
           "dq_checks": []
         }
@@ -378,7 +377,7 @@
         "patient_age": {
           "null_policy": {
             "mode": "FILL_NUMBER",
-            "value": -1
+            "value": 0
           },
           "dq_checks": [
             "ge0"
