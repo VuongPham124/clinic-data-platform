@@ -1,0 +1,22 @@
+clinic_platinum:
+  target: platinum
+  outputs:
+    platinum:
+      type: bigquery
+      method: oauth
+      project: wata-clinicdataplatform-gcp
+      dataset: platinum
+      location: us-central1
+      threads: 4
+      timeout_seconds: 300
+      priority: interactive
+ 
+    gold:
+      type: bigquery
+      method: oauth
+      project: wata-clinicdataplatform-gcp
+      dataset: gold
+      location: us-central1
+      threads: 4
+      timeout_seconds: 300
+      priority: interactive
