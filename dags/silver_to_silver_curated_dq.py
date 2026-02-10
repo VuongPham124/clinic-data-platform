@@ -80,7 +80,7 @@ with DAG(
                     "--contract_path", CONTRACT_LOCAL,
                     "--rules_json_path", RULES_LOCAL,
                     "--temp_gcs_bucket", TEMP_GCS_BUCKET,
-                    "--tables", "clinic_doctors, clinic_patients, clinic_rooms", #can set to ALL
+                    "--tables", "public_clinic_doctors, public_clinics, public_clinic_rooms", #test: public_clinic_doctors, public_clinics, public_clinic_rooms
                     "--exclude_deleted", "true",
                 ],
             },
