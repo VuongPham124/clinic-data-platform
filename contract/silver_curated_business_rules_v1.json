@@ -1,0 +1,539 @@
+{
+  "rules_version": "silver_curated_rules_from_business_rules_pyspark_v2_1_full",
+  "generated_at": "2026-02-09T03:24:04.124627Z",
+  "source": "Business_rules_pyspark.xlsx",
+  "scope": "silver -> silver_curated (DQ + null/empty policy)",
+  "tables": {
+    "clinics": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE.",
+        "Dims: keep rows; set is_active/is_current based on is_deleted (TRUE=>inactive)."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "UNKNOWN_NOT_ALLOWED"
+          },
+          "dq_checks": [
+            "not_null",
+            "unique_per_version"
+          ]
+        },
+        "name": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": [
+            "length>0"
+          ]
+        },
+        "address": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "latitude": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "longitude": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "is_active": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "clinic_doctors": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "FILL_NUMBER",
+            "value": -1
+          },
+          "dq_checks": [
+            "not_null"
+          ]
+        },
+        "clinic_id": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "full_name": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "gender": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "deleted_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "clinic_patients": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "FILL_NUMBER",
+            "value": -1
+          },
+          "dq_checks": [
+            "not_null"
+          ]
+        },
+        "clinic_id": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "user_id": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "deleted_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "clinic_rooms": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "FILL_NUMBER",
+            "value": -1
+          },
+          "dq_checks": [
+            "not_null"
+          ]
+        },
+        "clinic_id": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "room_name": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "doctor_id": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "deleted_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "transactions": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE.",
+        "transaction_type='payment_booking' AND transaction_action='CR' AND transaction_sub_type='capture' AND transaction_status='success' AND booking_id IS NOT NULL",
+        "transaction_type='payment_booking' AND transaction_action='DR' AND transaction_sub_type='commission' AND transaction_status='success' AND booking_id IS NOT NULL"
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "transaction_uuid": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "transaction_type": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "unknown"
+          },
+          "dq_checks": []
+        },
+        "transaction_action": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "transaction_sub_type": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "transaction_status": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "unknown"
+          },
+          "dq_checks": []
+        },
+        "currency": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "created_at": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "booking_id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "amount": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "clinic_bookings": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "booking_code": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "status": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "created_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "from_time": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "confirmed_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "finished_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "canceled_at": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "prescriptions": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "created_at": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "price": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "vat_amount": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "price_included_vat": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        }
+      }
+    },
+    "health_records": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "created_at": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "patient_age": {
+          "null_policy": {
+            "mode": "FILL_NUMBER",
+            "value": 0
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        }
+      }
+    },
+    "icd10_diagnoses": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "health_record_id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "code": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "name": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "medicines": {
+      "filters_desc": [],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "FILL_NUMBER",
+            "value": -1
+          },
+          "dq_checks": [
+            "not_null"
+          ]
+        },
+        "clinic_id": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "name": {
+          "null_policy": {
+            "mode": "FILL_STRING",
+            "value": "UNKNOWN"
+          },
+          "dq_checks": []
+        },
+        "code": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "unit": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        }
+      }
+    },
+    "medicine_import_details": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "id": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "lot_number": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "manufacturing_date": {
+          "null_policy": {
+            "mode": "ALLOW_NULL"
+          },
+          "dq_checks": []
+        },
+        "expire_date": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "import_price": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "created_at": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "init_total": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        },
+        "total": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": [
+            "ge0"
+          ]
+        }
+      }
+    },
+    "prescription_medicine_details": {
+      "filters_desc": [
+        "Facts: exclude rows where is_deleted = TRUE."
+      ],
+      "filters_sql": [],
+      "columns": {
+        "created_at": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": []
+        },
+        "quantity": {
+          "null_policy": {
+            "mode": "NOT_NULL"
+          },
+          "dq_checks": [
+            "gt0"
+          ]
+        }
+      }
+    }
+  }
+}
