@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  # =========================
+  # DIMENSIONS
+  # =========================
+
+  - name: dim_clinics
+    columns:
+      - name: clinic_key
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_clinic_doctors
+    columns:
+      - name: doctor_key
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_clinic_patients
+    columns:
+      - name: patient_key
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_clinic_rooms
+    columns:
+      - name: room_key
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_date
+    columns:
+      - name: date_key
+        tests:
+          - not_null
+          - unique
+
+  # =========================
+  # FACT
+  # =========================
+
+  # - name: fact_operational_clinic_bookings
+  #   columns:
+  #     - name: booking_id
+  #       tests:
+  #         - not_null
+  #         - unique
+
+  #     - name: clinic_key
+  #       tests:
+  #         - not_null
+
+
+  #     - name: patient_key
+  #       tests:
+  #         - not_null
+
+  #     - name: from_date_key
+  #       tests:
+  #         - not_null
+
+  - name: fact_operational_clinic_bookings_valid
+    columns:
+      - name: booking_id
+        tests:
+          - not_null
+          - unique
+
+      - name: clinic_key
+        tests: [not_null]
+
+      - name: patient_key
+        tests: [not_null]
+
+      - name: from_date_key
+        tests: [not_null]

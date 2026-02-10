@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: platinum
+    database: wata-clinicdataplatform-gcp
+    schema: platinum
+    tables:
+      - name: dim_date
+      - name: dim_clinic_doctors
+      - name: dim_clinic_rooms
+      - name: dim_clinics
+      - name: dim_clinic_patients
+      - name: fact_operational_clinic_bookings
+      - name: fact_operational_clinic_bookings_valid
+
+
