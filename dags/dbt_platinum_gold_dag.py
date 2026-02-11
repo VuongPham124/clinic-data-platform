@@ -19,7 +19,8 @@ with DAG(
     DBT_BASH_PREFIX = r"""
     set -euo pipefail
 
-    export PATH="$PATH:$HOME/.local/bin"
+    HOME_DIR="${HOME:-/home/airflow}"
+    export PATH="$PATH:${HOME_DIR}/.local/bin"
 
     DAGS_DIR="${DAGS_FOLDER:-${AIRFLOW__CORE__DAGS_FOLDER:-}}"
     if [ -z "${DAGS_DIR}" ]; then
@@ -71,6 +72,7 @@ with DAG(
 
     dbt_test_platinum = BashOperator(
         task_id="dbt_test_platinum",
+        append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "platinum"},
         bash_command=(
             DBT_BASH_PREFIX
@@ -82,6 +84,7 @@ with DAG(
 
     dbt_run_platinum = BashOperator(
         task_id="dbt_run_platinum",
+        append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "platinum"},
         bash_command=(
             DBT_BASH_PREFIX
@@ -93,6 +96,7 @@ with DAG(
 
     dbt_run_gold = BashOperator(
         task_id="dbt_run_gold",
+        append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "gold"},
         bash_command=(
             DBT_BASH_PREFIX
@@ -104,6 +108,7 @@ with DAG(
 
     dbt_test_gold = BashOperator(
         task_id="dbt_test_gold",
+        append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "gold"},
         bash_command=(
             DBT_BASH_PREFIX
