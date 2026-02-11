@@ -15,9 +15,11 @@ with DAG(
     tags=["dbt", "platinum", "gold"],
 ) as dag:
 
-    # Resolve Composer DAGS folder for different runtime layouts.
+    # Resolve Composer DAGS folder and dbt invocation for different runtime layouts.
     DBT_BASH_PREFIX = r"""
     set -euo pipefail
+
+    export PATH="$PATH:$HOME/.local/bin"
 
     DAGS_DIR="${DAGS_FOLDER:-${AIRFLOW__CORE__DAGS_FOLDER:-}}"
     if [ -z "${DAGS_DIR}" ]; then
@@ -40,8 +42,20 @@ with DAG(
 
     cd "${DBT_DIR}"
 
+    if command -v dbt >/dev/null 2>&1; then
+      DBT_CMD="dbt"
+    elif python3 -m dbt --version >/dev/null 2>&1; then
+      DBT_CMD="python3 -m dbt"
+    elif python -m dbt --version >/dev/null 2>&1; then
+      DBT_CMD="python -m dbt"
+    else
+      echo "[ERROR] dbt is not installed on Composer worker. Install dbt-core and dbt-bigquery in Composer PyPI packages."
+      exit 127
+    fi
+
     echo "[INFO] DBT_DIR=${DBT_DIR}"
-    dbt --version
+    echo "[INFO] DBT_CMD=${DBT_CMD}"
+    ${DBT_CMD} --version
     """
 
     COMMON_DBT_FLAGS = "--project-dir . --profiles-dir ."
@@ -61,7 +75,7 @@ with DAG(
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            dbt test --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} test --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
             """
         ),
     )
@@ -72,7 +86,7 @@ with DAG(
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            dbt run --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} run --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
             """
         ),
     )
@@ -83,7 +97,7 @@ with DAG(
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            dbt run --target gold --select path:models/gold {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} run --target gold --select path:models/gold {COMMON_DBT_FLAGS}
             """
         ),
     )
@@ -94,9 +108,9 @@ with DAG(
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            dbt test --target gold --select path:models/gold {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} test --target gold --select path:models/gold {COMMON_DBT_FLAGS}
             """
         ),
     )
 
-    dbt_test_platinum >> dbt_run_platinum >> dbt_run_gold >> dbt_test_gold
+    dbt_run_platinum >> dbt_test_platinum >> dbt_run_gold >> dbt_test_gold
