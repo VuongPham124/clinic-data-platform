@@ -46,3 +46,23 @@ models:
       - name: month_start_date_key
         tests:
           - not_null
+
+  - name: gold_prescription_value_daily
+    columns:
+      - name: clinic_key
+        tests: [not_null]
+      - name: doctor_key
+        tests: [not_null]
+      - name: date_key
+        tests: [not_null]
+
+  - name: gold_disease_top_by_clinic_age_weekly
+    columns:
+      - name: clinic_key
+        tests: [not_null]
+      - name: week_start_date_key
+        tests: [not_null]
+      - name: age_group_key
+        tests: [not_null]
+      - name: disease_code
+        tests: [not_null]
