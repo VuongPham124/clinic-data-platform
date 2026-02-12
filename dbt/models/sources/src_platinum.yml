@@ -12,6 +12,9 @@ sources:
       - name: dim_clinic_patients
       - name: dim_medicines
       - name: dim_medicines_lot
+      - name: fact_inventory_snapshot_valid
+      - name : fact_inventory_export_valid
+      - name: fact_inventory_import_valid
       - name: fact_operational_clinic_bookings_valid
       - name: fact_prescription_valid
       - name: fact_health_record_valid
