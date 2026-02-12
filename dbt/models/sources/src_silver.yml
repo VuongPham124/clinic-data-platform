@@ -30,7 +30,10 @@ sources:
       # =========================
       - name: prescriptions
         identifier: public_prescriptions
-
+      - name: prescription_medicines
+        identifier: public_prescription_medicines
+      - name: prescription_medicine_details
+        identifier: public_prescription_medicine_details
       # =========================
       # DOMAIN 3 – Health Records
       # =========================
@@ -39,4 +42,10 @@ sources:
 
       - name: disease_records
         identifier: public_icd10_diagnoses
+      
+      - name: medicines
+        identifier: public_medicines
+
+      - name: medicine_import_details
+        identifier: public_medicine_import_details
 

@@ -137,3 +137,37 @@ models:
         tests: [not_null]
       - name: disease_code
         tests: [not_null]
+  - name: fact_inventory_import_valid
+    columns:
+      - name: import_fact_id
+        tests: [not_null, unique]
+      - name: date_key
+        tests: [not_null]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
+  - name: fact_inventory_export_valid
+    columns:
+      - name: export_fact_id
+        tests: [not_null, unique]
+      - name: date_key
+        tests: [not_null]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
+  - name: fact_inventory_snapshot_valid
+    columns:
+      - name: snapshot_fact_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
