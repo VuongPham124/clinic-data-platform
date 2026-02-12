@@ -58,5 +58,4 @@ sources:
         identifier: public_doctors
       - name: patients
         identifier: public_patients
-      - name: prescription_medicines
-        identifier: public_prescription_medicines
+
