@@ -5,7 +5,7 @@ with src as (
     cast(id as int64) as medicine_id,
     cast(`name` AS string) AS medicine_name,
     cast(`code` AS string) AS code,
-    cast(`type` AS boolean) AS medicine_type,
+    cast(`type` AS string) AS medicine_type,
     cast(`group` AS string) AS medicine_group,
     cast(`unit` AS string) AS unit,
     cast(`manufacturer` AS string) AS manufacturer,
