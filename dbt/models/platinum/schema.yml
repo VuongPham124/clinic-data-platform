@@ -59,31 +59,81 @@ models:
   # FACT
   # =========================
 
-  - name: fact_operational_clinic_bookings
+  # - name: fact_operational_clinic_bookings
+  #   columns:
+  #     - name: booking_id
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+  #         - unique:
+  #             config:
+  #               severity: warn
+
+  #     - name: clinic_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+
+  #     - name: patient_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+
+  #     - name: from_date_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+  - name: fact_operational_clinic_bookings_valid
     columns:
       - name: booking_id
         tests:
-          - not_null:
-              config:
-                severity: warn
-          - unique:
-              config:
-                severity: warn
+          - not_null
+          - unique
 
       - name: clinic_key
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        tests: [not_null]
+
+      # - name: doctor_key
+      #   tests: [not_null]
 
       - name: patient_key
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        tests: [not_null]
 
       - name: from_date_key
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        tests: [not_null]
+
+
+  - name: fact_prescription_valid
+    columns:
+      - name: prescription_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: doctor_key
+        tests: [not_null]
+      - name: prescription_date_key
+        tests: [not_null]
+
+  - name: fact_health_record_valid
+    columns:
+      - name: health_record_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: record_date_key
+        tests: [not_null]
+      - name: age_group_key
+        tests: [not_null]
+
+  - name: fact_disease_record_valid
+    columns:
+      - name: disease_record_id
+        tests: [not_null, unique]
+      - name: health_record_id
+        tests: [not_null]
+      - name: disease_code
+        tests: [not_null]

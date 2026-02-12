@@ -5,6 +5,7 @@ on:
     branches:
       - feature/add_cdc_pipeline #testagain
       - feature/curated_rules_silver #testcurated1
+      - feature/test-dbt-composer
       - test-cicd
 
 jobs:
