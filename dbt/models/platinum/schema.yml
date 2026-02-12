@@ -171,3 +171,62 @@ models:
         tests: [not_null]
       - name: lot_key
         tests: [not_null]
+
+  # =========================
+  # DIMS
+  # =========================
+
+  - name: rev_fact_bookings
+    description: "Legacy revenue fact from bookings (online revenue logic)."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+  - name: rev_dim_doctors
+    description: "Legacy doctors dimension (pass-through)."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+  - name: rev_dim_patients
+    description: "Legacy patients dimension (pass-through)."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+  - name: rev_dim_prescription_medicines
+    description: "Legacy prescription medicines cleaned numeric fields."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: prescription_id
+        tests:
+          - not_null
+
+  # =========================
+  # FACTS
+  # =========================
+
+  - name: rev_fact_revenue
+    description: "Legacy revenue fact union of offline (clinic_bookings) and online (bookings)."
+    columns:
+      - name: booking_id
+        tests:
+          - not_null
+      - name: source_type
+        tests:
+          - not_null
+      - name: booking_date
+        tests:
+          - not_null
+      - name: gross_revenue
+        tests:
+          - not_null
