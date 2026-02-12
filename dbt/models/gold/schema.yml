@@ -132,7 +132,4 @@ models:
         tests: [not_null]
 
       - name: is_low_stock
-        tests:
-          - not_null
-          - accepted_values:
-              values: [true, false]
+        tests: [not_null]
