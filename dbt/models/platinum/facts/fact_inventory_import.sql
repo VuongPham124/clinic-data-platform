@@ -29,13 +29,13 @@ joined as (
     left join {{ ref('dim_date') }} d
         on d.date = date(s.created_ts)
 
-    left join {{ ref('dim_clinic') }} c
+    left join {{ ref('dim_clinics') }} c
         on c.clinic_id = s.clinic_id
 
-    left join {{ ref('dim_medicine') }} m
+    left join {{ ref('dim_medicines') }} m
         on m.medicine_id = s.medicine_id
 
-    left join {{ ref('dim_medicine_lot') }} l
+    left join {{ ref('dim_medicines_lot') }} l
         on l.medicine_import_detail_id = s.medicine_import_detail_id
 )
 
