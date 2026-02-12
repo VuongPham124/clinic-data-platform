@@ -49,3 +49,14 @@ sources:
       - name: medicine_import_details
         identifier: public_medicine_import_details
 
+
+
+      # ====== DOMAIN 4 - Revenue legacy needs ======
+      - name: bookings
+        identifier: public_bookings
+      - name: doctors
+        identifier: public_doctors
+      - name: patients
+        identifier: public_patients
+      - name: prescription_medicines
+        identifier: public_prescription_medicines

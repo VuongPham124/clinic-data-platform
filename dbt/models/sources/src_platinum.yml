@@ -19,7 +19,7 @@ sources:
       - name: fact_prescription_valid
       - name: fact_health_record_valid
       - name: fact_disease_record_valid
-
+      - name: rev_fact_bookings
 
 
 
