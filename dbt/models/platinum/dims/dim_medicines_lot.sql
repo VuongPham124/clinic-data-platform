@@ -5,7 +5,7 @@ with src as (
     cast(id as int64) as medicine_import_detail_id,
     cast(lot_number as string) as lot_number,
     safe_cast(expire_date as timestamp) as expire_date,
-    cast(import_price as double) as import_price,
+    cast(import_price as numeric) as import_price,
     cast(status as string) as status,
   from {{ source('silver', 'medicine_import_details') }}
 ),
