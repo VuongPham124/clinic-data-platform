@@ -7,7 +7,6 @@ models:
         tests:
           - not_null
           # - unique
-
       - name: clinic_key
         tests:
           - not_null
@@ -66,3 +65,74 @@ models:
         tests: [not_null]
       - name: disease_code
         tests: [not_null]
+  - name: near_expiry_drugs
+    columns:
+      - name: clinic_key
+        tests: [not_null]
+
+      - name: medicine_key
+        tests: [not_null]
+
+      - name: lot_key
+        tests: [not_null]
+
+      - name: medicine_import_detail_id
+        tests: [not_null, unique]
+
+      - name: expire_date
+        tests: [not_null]
+
+      - name: current_quantity
+        tests: [not_null]
+
+      - name: days_to_expire
+        tests: [not_null]
+
+      - name: urgent_level
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['red', 'yellow', 'green']
+  - name: best_selling_items
+    columns:
+      - name: clinic_key
+        tests: [not_null]
+
+      - name: medicine_key
+        tests: [not_null]
+
+      - name: year
+        tests: [not_null]
+
+      - name: month
+        tests: [not_null]
+
+      - name: total_quantity_exported
+        tests: [not_null]
+
+      - name: rank
+        tests: [not_null]
+
+
+  - name: low_stock_items
+    columns:
+      - name: clinic_key
+        tests: [not_null]
+
+      - name: medicine_key
+        tests: [not_null]
+
+      - name: lot_key
+        tests: [not_null]
+
+      - name: current_quantity
+        tests: [not_null]
+
+      - name: items_sold_prev_month
+        tests: [not_null]
+
+      - name: is_low_stock
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]

@@ -10,6 +10,7 @@ with src as (
         cast(total as int64) as quantity_imported,
         safe_cast(import_price as numeric) as import_price
     from {{ source('silver', 'medicine_import_details') }}
+    where lower(`status`) = 'active'
 
 ),
 

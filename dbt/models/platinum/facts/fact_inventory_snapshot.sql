@@ -10,6 +10,7 @@ with imports as (
         cast(total as int64) as quantity_imported,
         safe_cast(expire_date as date) as expire_date
     from {{ source('silver', 'medicine_import_details') }}
+    where lower(`status`) = 'active'
 
 ),
 
