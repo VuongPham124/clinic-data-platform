@@ -65,7 +65,7 @@ models:
         tests: [not_null]
       - name: disease_code
         tests: [not_null]
-  - name: near_expiry_drugs
+  - name: gold_near_expiry_drugs
     columns:
       - name: clinic_key
         tests: [not_null]
@@ -93,7 +93,7 @@ models:
           - not_null
           - accepted_values:
               values: ['red', 'yellow', 'green']
-  - name: best_selling_items
+  - name: gold_best_selling_items
     columns:
       - name: clinic_key
         tests: [not_null]
@@ -114,7 +114,7 @@ models:
         tests: [not_null]
 
 
-  - name: low_stock_items
+  - name: gold_low_stock_items
     columns:
       - name: clinic_key
         tests: [not_null]
