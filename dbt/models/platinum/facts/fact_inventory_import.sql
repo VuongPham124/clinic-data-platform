@@ -27,7 +27,7 @@ joined as (
     from src s
 
     left join {{ ref('dim_date') }} d
-        on d.date = date(s.created_ts)
+        on d.full_date = date(s.created_ts)
 
     left join {{ ref('dim_clinics') }} c
         on c.clinic_id = s.clinic_id

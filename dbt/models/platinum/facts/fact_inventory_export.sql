@@ -52,7 +52,7 @@ joined as (
     from base b
 
     left join {{ ref('dim_date') }} d
-        on d.date = date(b.created_ts)
+        on d.full_date = date(b.created_ts)
 
     left join {{ ref('dim_clinics') }} c
         on c.clinic_id = b.clinic_id
