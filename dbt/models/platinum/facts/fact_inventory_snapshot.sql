@@ -20,7 +20,7 @@ exports as (
         l.medicine_import_detail_id,
         sum(f.quantity_exported) as total_exported
     from {{ ref('fact_inventory_export') }} f
-    join {{ ref('dim_medicine_lot') }} l
+    join {{ ref('dim_medicines_lot') }} l
         on f.lot_key = l.lot_key
     group by l.medicine_import_detail_id
 
