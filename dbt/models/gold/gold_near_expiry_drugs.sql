@@ -7,7 +7,7 @@ with f as (
 
 lot as (
     select *
-    from {{ source('platinum', 'dim_medicine_lot') }}
+    from {{ source('platinum', 'dim_medicines_lot') }}
 )
 
 select
