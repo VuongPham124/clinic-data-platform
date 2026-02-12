@@ -5,8 +5,8 @@ with src as (
     cast(id as int64) as medicine_id,
     cast(`name` AS string) AS medicine_name,
     cast(`code` AS string) AS code,
-    cast(`type` AS boolean) AS type,
-    cast(`group` AS string) AS group,
+    cast(`type` AS boolean) AS medicine_type,
+    cast(`group` AS string) AS medicine_group,
     cast(`unit` AS string) AS unit,
     cast(`manufacturer` AS string) AS manufacturer,
     cast(`vat` AS string) AS vat,
@@ -17,7 +17,7 @@ dedup as (
   from (
     select
       *,
-      row_number() over (partition by clinic_id order by clinic_name) as rn
+      row_number() over (partition by medicine_id order by medicine_name) as rn
     from src
   )
   where rn = 1
@@ -25,12 +25,14 @@ dedup as (
 
 select
   -- stable surrogate key
-  abs(farm_fingerprint(cast(clinic_id as string))) as clinic_key,
-  clinic_id,
-  clinic_name,
-  clinic_address,
-  is_active,
-  open_time,
-  close_time
+  abs(farm_fingerprint(cast(medicine_id as string))) as medicine_key,
+  medicine_id,
+  medicine_name,
+  code,
+  medicine_type,
+  medicine_group,
+  unit,
+  manufacturer,
+  vat
 from dedup
-where clinic_id is not null
+where medicine_id is not null

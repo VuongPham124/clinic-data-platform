@@ -6,7 +6,7 @@ with src as (
     cast(lot_number as string) as lot_number,
     safe_cast(expire_date as timestamp) as expire_date,
     cast(import_price as numeric) as import_price,
-    cast(status as string) as status,
+    cast(status as string) as lot_status,
   from {{ source('silver', 'medicine_import_details') }}
 ),
 dedup as (
@@ -21,5 +21,5 @@ select
   lot_number,
   expire_date,
   import_price,
-  status
+  lot_status
 from dedup
