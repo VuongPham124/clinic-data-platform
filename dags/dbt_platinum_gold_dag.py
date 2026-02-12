@@ -45,9 +45,9 @@ with DAG(
 
     if command -v dbt >/dev/null 2>&1; then
       DBT_CMD="dbt"
-    elif python3 -m dbt --version >/dev/null 2>&1; then
+    elif python3 -c "import dbt" >/dev/null 2>&1; then
       DBT_CMD="python3 -m dbt"
-    elif python -m dbt --version >/dev/null 2>&1; then
+    elif python -c "import dbt" >/dev/null 2>&1; then
       DBT_CMD="python -m dbt"
     else
       echo "[ERROR] dbt is not installed on Composer worker. Install dbt-core and dbt-bigquery in Composer PyPI packages."
@@ -56,10 +56,9 @@ with DAG(
 
     echo "[INFO] DBT_DIR=${DBT_DIR}"
     echo "[INFO] DBT_CMD=${DBT_CMD}"
-    ${DBT_CMD} --version
     """
 
-    COMMON_DBT_FLAGS = "--project-dir . --profiles-dir ."
+    COMMON_DBT_FLAGS = "--no-version-check --project-dir . --profiles-dir ."
 
     # Keep profile vars explicit so Composer can override at environment level.
     COMMON_DBT_ENV = {
@@ -70,52 +69,28 @@ with DAG(
         "DBT_THREADS": os.environ.get("DBT_THREADS", "4"),
     }
 
-    dbt_test_platinum = BashOperator(
-        task_id="dbt_test_platinum",
+    dbt_build_platinum = BashOperator(
+        task_id="dbt_build_platinum",
         append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "platinum"},
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            ${{DBT_CMD}} test --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} build --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
             """
         ),
     )
 
-    dbt_run_platinum = BashOperator(
-        task_id="dbt_run_platinum",
-        append_env=True,
-        env={**COMMON_DBT_ENV, "DBT_TARGET": "platinum"},
-        bash_command=(
-            DBT_BASH_PREFIX
-            + f"""
-            ${{DBT_CMD}} run --target platinum --select path:models/platinum {COMMON_DBT_FLAGS}
-            """
-        ),
-    )
-
-    dbt_run_gold = BashOperator(
-        task_id="dbt_run_gold",
+    dbt_build_gold = BashOperator(
+        task_id="dbt_build_gold",
         append_env=True,
         env={**COMMON_DBT_ENV, "DBT_TARGET": "gold"},
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            ${{DBT_CMD}} run --target gold --select path:models/gold {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} build --target gold --select path:models/gold {COMMON_DBT_FLAGS}
             """
         ),
     )
 
-    dbt_test_gold = BashOperator(
-        task_id="dbt_test_gold",
-        append_env=True,
-        env={**COMMON_DBT_ENV, "DBT_TARGET": "gold"},
-        bash_command=(
-            DBT_BASH_PREFIX
-            + f"""
-            ${{DBT_CMD}} test --target gold --select path:models/gold {COMMON_DBT_FLAGS}
-            """
-        ),
-    )
-
-    dbt_run_platinum >> dbt_test_platinum >> dbt_run_gold >> dbt_test_gold
+    dbt_build_platinum >> dbt_build_gold
