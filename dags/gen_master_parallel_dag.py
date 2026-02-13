@@ -60,7 +60,7 @@ with DAG(
         if DAGS_GCS else None
     )
     MASTER_DRUG_MAIN_PY = (
-        f"{DAGS_GCS}/pipelines/gen_master/gen_master_drug_code_medicines_script_patched.py"
+        f"{DAGS_GCS}/pipelines/gen_master/gen_master_drug_code_medicines_script_v2.py"
         if DAGS_GCS else None
     )
 
@@ -101,3 +101,4 @@ with DAG(
     )
 
     [spark_gen_master_patient_id, spark_gen_master_drug_code]
+
