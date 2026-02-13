@@ -33,7 +33,10 @@ with DAG(
     if TEMP_GCS_BUCKET.startswith("gs://"):
         TEMP_GCS_BUCKET = TEMP_GCS_BUCKET.replace("gs://", "", 1)
 
-    BIGQUERY_JAR = "gs://wata-amaz-utils/spark-3.5-bigquery-0.43.1.jar"
+    # Use cluster built-in BigQuery connector by default to avoid classpath conflicts.
+    # Set BIGQUERY_CONNECTOR_JAR_URI only when you explicitly need a custom connector jar.
+    BIGQUERY_CONNECTOR_JAR_URI = os.environ.get("BIGQUERY_CONNECTOR_JAR_URI", "").strip()
+    JAR_FILE_URIS = [BIGQUERY_CONNECTOR_JAR_URI] if BIGQUERY_CONNECTOR_JAR_URI else []
 
     MASTER_PATIENT_MAIN_PY = (
         f"{DAGS_GCS}/pipelines/gen_master/gen_master_patient_id_script_patched.py"
@@ -53,7 +56,7 @@ with DAG(
             "placement": {"cluster_name": CLUSTER_NAME},
             "pyspark_job": {
                 "main_python_file_uri": MASTER_PATIENT_MAIN_PY,
-                "jar_file_uris": [BIGQUERY_JAR],
+                "jar_file_uris": JAR_FILE_URIS,
                 "properties": {
                     "spark.sql.debug.maxToStringFields": "2000",
                 },
@@ -73,7 +76,7 @@ with DAG(
             "placement": {"cluster_name": CLUSTER_NAME},
             "pyspark_job": {
                 "main_python_file_uri": MASTER_DRUG_MAIN_PY,
-                "jar_file_uris": [BIGQUERY_JAR],
+                "jar_file_uris": JAR_FILE_URIS,
                 "properties": {
                     "spark.sql.debug.maxToStringFields": "2000",
                 },
