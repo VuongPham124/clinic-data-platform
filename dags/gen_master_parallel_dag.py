@@ -33,11 +33,18 @@ with DAG(
     if TEMP_GCS_BUCKET.startswith("gs://"):
         TEMP_GCS_BUCKET = TEMP_GCS_BUCKET.replace("gs://", "", 1)
 
-    # BigQuery connector jar. Set to empty/NONE to disable custom jar.
-    BIGQUERY_CONNECTOR_JAR_URI = os.environ.get(
-        "BIGQUERY_CONNECTOR_JAR_URI",
-        "",
-    ).strip()
+    # BigQuery connector jar with allowlist validation (prevent arbitrary code load).
+    # Set BIGQUERY_CONNECTOR_JAR_URI="" to rely on cluster-provided connector only.
+    ALLOWED_BIGQUERY_JARS = {
+        "gs://wata-amaz-utils/spark-3.5-bigquery-0.43.1.jar",
+    }
+    BIGQUERY_CONNECTOR_JAR_URI = os.environ.get("BIGQUERY_CONNECTOR_JAR_URI", "").strip()
+    if BIGQUERY_CONNECTOR_JAR_URI and BIGQUERY_CONNECTOR_JAR_URI not in ALLOWED_BIGQUERY_JARS:
+        raise ValueError(
+            "BIGQUERY_CONNECTOR_JAR_URI is not in allowlist. "
+            f"Got: {BIGQUERY_CONNECTOR_JAR_URI}"
+        )
+
     JAR_FILE_URIS = (
         []
         if BIGQUERY_CONNECTOR_JAR_URI.lower() in {"", "none", "null"}

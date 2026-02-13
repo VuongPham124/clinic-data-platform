@@ -18,6 +18,7 @@ Note: This script converts Spark DF -> Pandas for rule verification, so keep dat
 """
 
 import argparse
+import os
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructField, StructType, StringType
@@ -30,7 +31,12 @@ BQ_DATA_SOURCES = [
     "bigquery",
 ]
 
-def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: str | None) -> pd.DataFrame:
+def load_input_as_pandas(
+    spark: SparkSession,
+    input_bq_table: str,
+    input_csv: str | None,
+    max_input_rows: int,
+) -> pd.DataFrame:
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]
     if input_csv:
         return pd.read_csv(input_csv, usecols=cols, dtype=str)
@@ -50,6 +56,16 @@ def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: st
             last_error = exc
     if df_spark is None:
         raise RuntimeError(f"Cannot read BigQuery table with known providers: {last_error}")
+
+    # Guardrail: toPandas() collects all rows to driver; fail fast for large inputs.
+    row_count = df_spark.count()
+    if row_count > max_input_rows:
+        raise RuntimeError(
+            f"Input too large for driver-side pandas processing: {row_count} rows "
+            f"(max_input_rows={max_input_rows}). "
+            "Reduce input size or rewrite this pipeline with Spark-native transforms."
+        )
+
     df = df_spark.toPandas()
     for c in cols:
         if c in df.columns:
@@ -104,10 +120,21 @@ def main():
     parser.add_argument("--temp-gcs-bucket", required=True)
     parser.add_argument("--input-csv", default=None)
     parser.add_argument("--write-mode", default="overwrite", choices=["overwrite", "append"])
+    parser.add_argument(
+        "--max-input-rows",
+        type=int,
+        default=int(os.environ.get("MASTER_DRUG_MAX_INPUT_ROWS", "300000")),
+        help="Safety limit for driver-side pandas processing.",
+    )
     args = parser.parse_args()
 
     spark = SparkSession.builder.appName("master_drug_code_medicines_patch").getOrCreate()
-    df = load_input_as_pandas(spark, args.input_bq_table, args.input_csv)
+    df = load_input_as_pandas(
+        spark=spark,
+        input_bq_table=args.input_bq_table,
+        input_csv=args.input_csv,
+        max_input_rows=args.max_input_rows,
+    )
 
     # =========================
     # FINAL VERSION (CLEAN)
@@ -648,7 +675,7 @@ def main():
         r"dong\s+goi\s+thu\s+cap",              # đóng gói thứ cấp
         r"xuat\s+xuong",                       # xuất xưởng
         r"xuat",
-        "thuoc"
+        r"thuoc",
         r"tai",
         # Medical equipment
         r"trang\s+thiet\s+bi\s+y\s+te",         # trang thiết bị y tế
