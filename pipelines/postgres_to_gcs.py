@@ -119,13 +119,31 @@ def build_safe_select(cur, table):
     )
 
     exprs = []
+
     for col, dtype in cur.fetchall():
         qc = f'"{col}"'
+        dtype = dtype.lower()
+
+        # -------- TIMESTAMP --------
         if "timestamp" in dtype:
             exprs.append(
                 f"to_char({qc} AT TIME ZONE 'UTC', "
                 f"'YYYY-MM-DD HH24:MI:SS.US') AS {qc}"
             )
+
+        # -------- JSON / JSONB --------
+        elif dtype in ("json", "jsonb"):
+            exprs.append(f"{qc}::text AS {qc}")
+
+        # -------- ARRAY (nếu có) --------
+        elif "array" in dtype:
+            exprs.append(f"{qc}::text AS {qc}")
+
+        # -------- NUMERIC / DECIMAL --------
+        elif dtype in ("numeric", "decimal"):
+            exprs.append(f"{qc}::text AS {qc}")
+
+        # -------- DEFAULT --------
         else:
             exprs.append(qc)
 
@@ -182,7 +200,10 @@ def ingest_table(table, load_date, run_id, chunk_size):
                 WITH (
                     FORMAT CSV,
                     HEADER TRUE,
-                    ENCODING 'UTF8'
+                    ENCODING 'UTF8',
+                    QUOTE '"',
+                    ESCAPE '"',
+                    FORCE_QUOTE *
                 )
             """
 
