@@ -21,9 +21,8 @@ import argparse
 import pandas as pd
 from pyspark.sql import SparkSession
 
-# Use explicit BigQuery data source class to avoid alias ambiguity when both
-# Spark34/Spark35 BigQuery v2 providers are present on classpath.
-BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery"
+# Pin BigQuery provider for Spark 3.5 to avoid alias ambiguity.
+BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
 
 def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: str | None) -> pd.DataFrame:
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]

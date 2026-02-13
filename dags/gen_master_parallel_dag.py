@@ -46,11 +46,6 @@ with DAG(
 
     SPARK_PROPS = {
         "spark.sql.debug.maxToStringFields": "2000",
-        # Avoid v2 provider ambiguity when connector exposes multiple Spark providers.
-        "spark.sql.sources.useV1SourceList": "avro,bigquery",
-        # Prefer job jars over cluster classpath to reduce connector version conflicts.
-        "spark.driver.userClassPathFirst": "true",
-        "spark.executor.userClassPathFirst": "true",
     }
 
     MASTER_PATIENT_MAIN_PY = (

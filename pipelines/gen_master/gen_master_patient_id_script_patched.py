@@ -40,9 +40,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
-# Use explicit BigQuery data source class to avoid alias ambiguity when both
-# Spark34/Spark35 BigQuery v2 providers are present on classpath.
-BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery"
+# Pin BigQuery provider for Spark 3.5 to avoid alias ambiguity.
+BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
 
 # =====================
 # 1) SAME RULES as your script
