@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 with src as (
   select
     cast(id as int64) as medicine_import_detail_id,

@@ -211,22 +211,3 @@ models:
         tests:
           - not_null
 
-  # =========================
-  # FACTS
-  # =========================
-
-  - name: rev_fact_revenue
-    description: "Legacy revenue fact union of offline (clinic_bookings) and online (bookings)."
-    columns:
-      - name: booking_id
-        tests:
-          - not_null
-      - name: source_type
-        tests:
-          - not_null
-      - name: booking_date
-        tests:
-          - not_null
-      - name: gross_revenue
-        tests:
-          - not_null
