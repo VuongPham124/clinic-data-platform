@@ -33,7 +33,7 @@ with DAG(
     if TEMP_GCS_BUCKET.startswith("gs://"):
         TEMP_GCS_BUCKET = TEMP_GCS_BUCKET.replace("gs://", "", 1)
 
-    BIGQUERY_JAR = "gs://amaz-utils/spark-3.5-bigquery-0.43.1"
+    BIGQUERY_JAR = "gs://wata-amaz-utils/spark-3.5-bigquery-0.43.1.jar"
 
     MASTER_PATIENT_MAIN_PY = (
         f"{DAGS_GCS}/pipelines/gen_master/gen_master_patient_id_script_patched.py"
