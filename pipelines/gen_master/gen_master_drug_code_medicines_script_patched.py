@@ -21,25 +21,13 @@ import argparse
 import pandas as pd
 from pyspark.sql import SparkSession
 
-
-def _bq_provider_for_spark(spark: SparkSession) -> str:
-    version = getattr(spark, "version", "") or ""
-    if version.startswith("3.5"):
-        return "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
-    if version.startswith("3.4"):
-        return "com.google.cloud.spark.bigquery.v2.Spark34BigQueryTableProvider"
-    # Fallback for other runtimes.
-    return "com.google.cloud.spark.bigquery"
-
-
 def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: str | None) -> pd.DataFrame:
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]
     if input_csv:
         return pd.read_csv(input_csv, usecols=cols, dtype=str)
 
-    provider = _bq_provider_for_spark(spark)
     df_spark = (
-        spark.read.format(provider)
+        spark.read.format("bigquery")
         .option("table", input_bq_table)
         .load()
         .select(*cols)
@@ -58,9 +46,8 @@ def write_output_to_bigquery(
     mode: str = "overwrite",
 ) -> None:
     sdf = spark.createDataFrame(df_out)
-    provider = _bq_provider_for_spark(spark)
     (
-        sdf.write.format(provider)
+        sdf.write.format("bigquery")
         .option("table", output_bq_table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .mode(mode)
