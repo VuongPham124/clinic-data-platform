@@ -41,6 +41,16 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
 
+def _bq_provider_for_spark(spark: SparkSession) -> str:
+    version = getattr(spark, "version", "") or ""
+    if version.startswith("3.5"):
+        return "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
+    if version.startswith("3.4"):
+        return "com.google.cloud.spark.bigquery.v2.Spark34BigQueryTableProvider"
+    # Fallback for other runtimes.
+    return "com.google.cloud.spark.bigquery"
+
+
 # =====================
 # 1) SAME RULES as your script
 # =====================
@@ -151,8 +161,9 @@ def build_master_id(name: object, dob: object, phone: object) -> str:
 # 2) BigQuery IO helpers
 # =====================
 def read_bq(spark: SparkSession, table: str, temp_gcs_bucket: str):
+    provider = _bq_provider_for_spark(spark)
     return (
-        spark.read.format("bigquery")
+        spark.read.format(provider)
         .option("table", table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .load()
@@ -160,8 +171,9 @@ def read_bq(spark: SparkSession, table: str, temp_gcs_bucket: str):
 
 
 def write_bq(df, table: str, temp_gcs_bucket: str, mode: str):
+    provider = _bq_provider_for_spark(df.sparkSession)
     (
-        df.write.format("bigquery")
+        df.write.format(provider)
         .option("table", table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .mode(mode)
