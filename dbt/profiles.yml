@@ -1,22 +1,24 @@
 clinic_platinum:
-  target: platinum
+  # Allow Composer to choose target at runtime via env var; default is platinum.
+  target: "{{ env_var('DBT_TARGET', 'platinum') }}"
+
   outputs:
     platinum:
       type: bigquery
       method: oauth
-      project: wata-clinicdataplatform-gcp
-      dataset: platinum
-      location: us-central1
-      threads: 4
+      project: "{{ env_var('DBT_GCP_PROJECT', 'wata-clinicdataplatform-gcp') }}"
+      dataset: "{{ env_var('DBT_DATASET_PLATINUM', 'platinum') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'us-central1') }}"
+      threads: "{{ env_var('DBT_THREADS', '4') | int }}"
       timeout_seconds: 300
       priority: interactive
- 
+
     gold:
       type: bigquery
       method: oauth
-      project: wata-clinicdataplatform-gcp
-      dataset: gold
-      location: us-central1
-      threads: 4
+      project: "{{ env_var('DBT_GCP_PROJECT', 'wata-clinicdataplatform-gcp') }}"
+      dataset: "{{ env_var('DBT_DATASET_GOLD', 'gold') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'us-central1') }}"
+      threads: "{{ env_var('DBT_THREADS', '4') | int }}"
       timeout_seconds: 300
       priority: interactive

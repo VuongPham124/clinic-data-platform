@@ -4,14 +4,58 @@ sources:
   - name: silver
     database: wata-clinicdataplatform-gcp
     schema: silver_curated
+    # schema: silver
+
     tables:
+      # =========================
+      # DOMAIN 1 – Operational Bookings
+      # =========================
       - name: clinic_bookings
         identifier: public_clinic_bookings
+
       - name: clinics
         identifier: public_clinics
+
       - name: clinic_doctors
         identifier: public_clinic_doctors
+
       - name: clinic_patients
         identifier: public_clinic_patients
+
       - name: clinic_rooms
         identifier: public_clinic_rooms
+
+      # =========================
+      # DOMAIN 2 – Prescriptions
+      # =========================
+      - name: prescriptions
+        identifier: public_prescriptions
+      - name: prescription_medicines
+        identifier: public_prescription_medicines
+      - name: prescription_medicine_details
+        identifier: public_prescription_medicine_details
+      # =========================
+      # DOMAIN 3 – Health Records
+      # =========================
+      - name: health_records
+        identifier: public_health_records
+
+      - name: disease_records
+        identifier: public_icd10_diagnoses
+      
+      - name: medicines
+        identifier: public_medicines
+
+      - name: medicine_import_details
+        identifier: public_medicine_import_details
+
+
+
+      # ====== DOMAIN 4 - Revenue legacy needs ======
+      - name: bookings
+        identifier: public_bookings
+      - name: doctors
+        identifier: public_doctors
+      - name: patients
+        identifier: public_patients
+

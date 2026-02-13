@@ -3,13 +3,13 @@
 with src as (
   select
     cast(id as int64) as medicine_id,
-    cast(name as string) as medicine_name,
-    cast(code as string) as code,
-    cast(type as string) as type,
-    cast(group as string) as group,
-    cast (unit as string) as unit,
-    cast (manufacturer as string) as manufacturer,
-    cast (vat as int64) as vat,
+    cast(`name` AS string) AS medicine_name,
+    cast(`code` AS string) AS code,
+    cast(`type` AS string) AS medicine_type,
+    cast(`group` AS string) AS medicine_group,
+    cast(`unit` AS string) AS unit,
+    cast(`manufacturer` AS string) AS manufacturer,
+    cast(`vat` AS string) AS vat,
   from {{ source('silver', 'medicines') }}
 ),
 dedup as (
@@ -24,12 +24,13 @@ dedup as (
 )
 
 select
+  -- stable surrogate key
   abs(farm_fingerprint(cast(medicine_id as string))) as medicine_key,
   medicine_id,
   medicine_name,
   code,
-  type,
-  group,
+  medicine_type,
+  medicine_group,
   unit,
   manufacturer,
   vat

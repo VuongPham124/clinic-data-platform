@@ -59,31 +59,155 @@ models:
   # FACT
   # =========================
 
-  - name: fact_operational_clinic_bookings
+  # - name: fact_operational_clinic_bookings
+  #   columns:
+  #     - name: booking_id
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+  #         - unique:
+  #             config:
+  #               severity: warn
+
+  #     - name: clinic_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+
+  #     - name: patient_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+
+  #     - name: from_date_key
+  #       tests:
+  #         - not_null:
+  #             config:
+  #               severity: warn
+  - name: fact_operational_clinic_bookings_valid
     columns:
       - name: booking_id
         tests:
-          - not_null:
-              config:
-                severity: warn
-          - unique:
-              config:
-                severity: warn
+          - not_null
+          - unique
 
       - name: clinic_key
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        tests: [not_null]
+
+      # - name: doctor_key
+      #   tests: [not_null]
 
       - name: patient_key
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        tests: [not_null]
 
       - name: from_date_key
+        tests: [not_null]
+
+
+  - name: fact_prescription_valid
+    columns:
+      - name: prescription_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: doctor_key
+        tests: [not_null]
+      - name: prescription_date_key
+        tests: [not_null]
+
+  - name: fact_health_record_valid
+    columns:
+      - name: health_record_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: record_date_key
+        tests: [not_null]
+      - name: age_group_key
+        tests: [not_null]
+
+  - name: fact_disease_record_valid
+    columns:
+      - name: disease_record_id
+        tests: [not_null, unique]
+      - name: health_record_id
+        tests: [not_null]
+      - name: disease_code
+        tests: [not_null]
+  - name: fact_inventory_import_valid
+    columns:
+      - name: import_fact_id
+        tests: [not_null, unique]
+      - name: date_key
+        tests: [not_null]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
+  - name: fact_inventory_export_valid
+    columns:
+      - name: export_fact_id
+        tests: [not_null, unique]
+      - name: date_key
+        tests: [not_null]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
+  - name: fact_inventory_snapshot_valid
+    columns:
+      - name: snapshot_fact_id
+        tests: [not_null, unique]
+      - name: clinic_key
+        tests: [not_null]
+      - name: medicine_key
+        tests: [not_null]
+      - name: lot_key
+        tests: [not_null]
+
+  # =========================
+  # DIMS
+  # =========================
+
+  - name: rev_fact_bookings
+    description: "Legacy revenue fact from bookings (online revenue logic)."
+    columns:
+      - name: id
         tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
+          - unique
+
+  - name: rev_dim_doctors
+    description: "Legacy doctors dimension (pass-through)."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+  - name: rev_dim_patients
+    description: "Legacy patients dimension (pass-through)."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+  - name: rev_dim_prescription_medicines
+    description: "Legacy prescription medicines cleaned numeric fields."
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: prescription_id
+        tests:
+          - not_null
+
