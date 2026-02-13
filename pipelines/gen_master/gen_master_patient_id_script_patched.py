@@ -40,6 +40,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
+# Use explicit BigQuery data source class to avoid alias ambiguity when both
+# Spark34/Spark35 BigQuery v2 providers are present on classpath.
+BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery"
+
 # =====================
 # 1) SAME RULES as your script
 # =====================
@@ -151,7 +155,7 @@ def build_master_id(name: object, dob: object, phone: object) -> str:
 # =====================
 def read_bq(spark: SparkSession, table: str, temp_gcs_bucket: str):
     return (
-        spark.read.format("bigquery")
+        spark.read.format(BQ_DATA_SOURCE)
         .option("table", table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .load()
@@ -160,7 +164,7 @@ def read_bq(spark: SparkSession, table: str, temp_gcs_bucket: str):
 
 def write_bq(df, table: str, temp_gcs_bucket: str, mode: str):
     (
-        df.write.format("bigquery")
+        df.write.format(BQ_DATA_SOURCE)
         .option("table", table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .mode(mode)

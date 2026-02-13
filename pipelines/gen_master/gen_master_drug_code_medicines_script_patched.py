@@ -21,13 +21,17 @@ import argparse
 import pandas as pd
 from pyspark.sql import SparkSession
 
+# Use explicit BigQuery data source class to avoid alias ambiguity when both
+# Spark34/Spark35 BigQuery v2 providers are present on classpath.
+BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery"
+
 def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: str | None) -> pd.DataFrame:
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]
     if input_csv:
         return pd.read_csv(input_csv, usecols=cols, dtype=str)
 
     df_spark = (
-        spark.read.format("bigquery")
+        spark.read.format(BQ_DATA_SOURCE)
         .option("table", input_bq_table)
         .load()
         .select(*cols)
@@ -47,7 +51,7 @@ def write_output_to_bigquery(
 ) -> None:
     sdf = spark.createDataFrame(df_out)
     (
-        sdf.write.format("bigquery")
+        sdf.write.format(BQ_DATA_SOURCE)
         .option("table", output_bq_table)
         .option("temporaryGcsBucket", temp_gcs_bucket)
         .mode(mode)
