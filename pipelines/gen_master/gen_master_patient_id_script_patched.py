@@ -40,8 +40,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
-# Pin BigQuery provider for Spark 3.5 to avoid alias ambiguity.
-BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
+# Try multiple providers to survive connector/classpath differences across clusters.
+BQ_DATA_SOURCES = [
+    "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider",
+    "com.google.cloud.spark.bigquery.v2.Spark34BigQueryTableProvider",
+    "com.google.cloud.spark.bigquery",
+    "bigquery",
+]
 
 # =====================
 # 1) SAME RULES as your script
@@ -153,21 +158,38 @@ def build_master_id(name: object, dob: object, phone: object) -> str:
 # 2) BigQuery IO helpers
 # =====================
 def read_bq(spark: SparkSession, table: str, temp_gcs_bucket: str):
-    return (
-        spark.read.format(BQ_DATA_SOURCE)
-        .option("table", table)
-        .option("temporaryGcsBucket", temp_gcs_bucket)
-        .load()
+    errors = []
+    for source in BQ_DATA_SOURCES:
+        try:
+            return (
+                spark.read.format(source)
+                .option("table", table)
+                .option("temporaryGcsBucket", temp_gcs_bucket)
+                .load()
+            )
+        except Exception as exc:
+            errors.append(f"{source}: {str(exc).splitlines()[0]}")
+    raise RuntimeError(
+        "Cannot read BigQuery table. Tried providers: " + " | ".join(errors)
     )
 
 
 def write_bq(df, table: str, temp_gcs_bucket: str, mode: str):
-    (
-        df.write.format(BQ_DATA_SOURCE)
-        .option("table", table)
-        .option("temporaryGcsBucket", temp_gcs_bucket)
-        .mode(mode)
-        .save()
+    errors = []
+    for source in BQ_DATA_SOURCES:
+        try:
+            (
+                df.write.format(source)
+                .option("table", table)
+                .option("temporaryGcsBucket", temp_gcs_bucket)
+                .mode(mode)
+                .save()
+            )
+            return
+        except Exception as exc:
+            errors.append(f"{source}: {str(exc).splitlines()[0]}")
+    raise RuntimeError(
+        "Cannot write BigQuery table. Tried providers: " + " | ".join(errors)
     )
 
 

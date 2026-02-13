@@ -36,7 +36,7 @@ with DAG(
     # BigQuery connector jar. Set to empty/NONE to disable custom jar.
     BIGQUERY_CONNECTOR_JAR_URI = os.environ.get(
         "BIGQUERY_CONNECTOR_JAR_URI",
-        "gs://wata-amaz-utils/spark-3.5-bigquery-0.43.1.jar",
+        "",
     ).strip()
     JAR_FILE_URIS = (
         []

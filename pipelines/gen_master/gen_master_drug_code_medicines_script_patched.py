@@ -21,20 +21,34 @@ import argparse
 import pandas as pd
 from pyspark.sql import SparkSession
 
-# Pin BigQuery provider for Spark 3.5 to avoid alias ambiguity.
-BQ_DATA_SOURCE = "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider"
+# Try multiple providers to survive connector/classpath differences across clusters.
+BQ_DATA_SOURCES = [
+    "com.google.cloud.spark.bigquery.v2.Spark35BigQueryTableProvider",
+    "com.google.cloud.spark.bigquery.v2.Spark34BigQueryTableProvider",
+    "com.google.cloud.spark.bigquery",
+    "bigquery",
+]
 
 def load_input_as_pandas(spark: SparkSession, input_bq_table: str, input_csv: str | None) -> pd.DataFrame:
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]
     if input_csv:
         return pd.read_csv(input_csv, usecols=cols, dtype=str)
 
-    df_spark = (
-        spark.read.format(BQ_DATA_SOURCE)
-        .option("table", input_bq_table)
-        .load()
-        .select(*cols)
-    )
+    last_error = None
+    df_spark = None
+    for source in BQ_DATA_SOURCES:
+        try:
+            df_spark = (
+                spark.read.format(source)
+                .option("table", input_bq_table)
+                .load()
+                .select(*cols)
+            )
+            break
+        except Exception as exc:
+            last_error = exc
+    if df_spark is None:
+        raise RuntimeError(f"Cannot read BigQuery table with known providers: {last_error}")
     df = df_spark.toPandas()
     for c in cols:
         if c in df.columns:
@@ -49,13 +63,20 @@ def write_output_to_bigquery(
     mode: str = "overwrite",
 ) -> None:
     sdf = spark.createDataFrame(df_out)
-    (
-        sdf.write.format(BQ_DATA_SOURCE)
-        .option("table", output_bq_table)
-        .option("temporaryGcsBucket", temp_gcs_bucket)
-        .mode(mode)
-        .save()
-    )
+    last_error = None
+    for source in BQ_DATA_SOURCES:
+        try:
+            (
+                sdf.write.format(source)
+                .option("table", output_bq_table)
+                .option("temporaryGcsBucket", temp_gcs_bucket)
+                .mode(mode)
+                .save()
+            )
+            return
+        except Exception as exc:
+            last_error = exc
+    raise RuntimeError(f"Cannot write BigQuery table with known providers: {last_error}")
 
 def main():
     parser = argparse.ArgumentParser()
