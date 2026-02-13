@@ -20,6 +20,7 @@ Note: This script converts Spark DF -> Pandas for rule verification, so keep dat
 import argparse
 import pandas as pd
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StructField, StructType, StringType
 
 # Try multiple providers to survive connector/classpath differences across clusters.
 BQ_DATA_SOURCES = [
@@ -62,7 +63,25 @@ def write_output_to_bigquery(
     temp_gcs_bucket: str,
     mode: str = "overwrite",
 ) -> None:
-    sdf = spark.createDataFrame(df_out)
+    # Normalize all values to scalar strings/None to avoid Spark schema merge errors
+    # such as StructType vs StringType from mixed pandas object cells.
+    safe_df = df_out.copy()
+
+    def to_nullable_string(v):
+        if v is None:
+            return None
+        try:
+            if pd.isna(v):
+                return None
+        except Exception:
+            pass
+        return str(v)
+
+    for col in safe_df.columns:
+        safe_df[col] = safe_df[col].map(to_nullable_string)
+
+    schema = StructType([StructField(c, StringType(), True) for c in safe_df.columns])
+    sdf = spark.createDataFrame(safe_df, schema=schema)
     last_error = None
     for source in BQ_DATA_SOURCES:
         try:
