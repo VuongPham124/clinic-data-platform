@@ -247,7 +247,7 @@ if __name__ == "__main__":
                 logger.warning(f"SKIP table={full_name} path not found")
                 continue
 
-            df = spark.read.option("header", "true").option("inferSchema", "false").csv(src)
+            df = spark.read.option("header", "true").option("quote", '"').option("escape", '"').option("multiLine", "true").option("inferSchema", "false").csv(src)
 
             df = trim_string_columns_by_contract(df, cfg["columns"])
             df = ensure_columns(df, cfg["columns"])
