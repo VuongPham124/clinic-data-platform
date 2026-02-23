@@ -8,7 +8,7 @@ VN_TZ = pendulum.timezone("Asia/Ho_Chi_Minh")
 with DAG(
     dag_id="silver_to_silver_curated_dq_v2_3",
     start_date=pendulum.datetime(2026, 2, 9, tz=VN_TZ),
-    schedule="0 3 * * *",  # chạy 03:00 ICT mỗi ngày (sau DAG silver)
+    schedule=None,  # chạy 03:00 ICT mỗi ngày (sau DAG silver)
     catchup=False,
     max_active_runs=1,
     default_args={"retries": 1},
