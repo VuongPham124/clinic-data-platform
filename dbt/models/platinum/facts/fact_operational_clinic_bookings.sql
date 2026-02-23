@@ -82,7 +82,6 @@ with b as (
 
   from {{ source('silver', 'clinic_bookings') }}
 ),
-
 rev as (
   select
     *,
@@ -111,7 +110,7 @@ bk as (
     cast(format_timestamp('%Y%m%d', finished_ts) as int64) as finished_date_key,
     cast(format_timestamp('%Y%m%d', canceled_ts) as int64) as canceled_date_key,
 
-    (finished_ts != TIMESTAMP `0001-01-01 00:00:00`) as is_completed,
+    finished_ts != TIMESTAMP '0001-01-01 00:00:00' as is_completed,
 
     case
       when created_ts < confirmed_ts 
