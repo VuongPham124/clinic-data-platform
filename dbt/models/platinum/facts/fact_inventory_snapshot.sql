@@ -8,7 +8,7 @@ with imports as (
         cast(clinic_id as int64) as clinic_id,
         cast(medicine_id as int64) as medicine_id,
         cast(total as int64) as quantity_imported,
-        safe_cast(expire_date as date) as expire_date
+        date(expire_date) as expire_date
     from {{ source('silver', 'medicine_import_details') }}
     where lower(`status`) = 'active'
 
@@ -76,3 +76,4 @@ select
     current_quantity,
     days_to_expire
 from joined
+where current_quantity > 0

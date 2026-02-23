@@ -7,6 +7,7 @@ select
     when clinic_key is null then 'clinic_key_null'
     when medicine_key is null then 'medicine_key_null'
     when lot_key is null then 'lot_key_null'
+    when current_quantity <= 0 then 'current_quantity_non_positive'
     else 'unknown'
   end as invalid_reason
 from {{ ref('fact_inventory_snapshot') }}
@@ -15,3 +16,4 @@ where
   or clinic_key is null
   or medicine_key is null
   or lot_key is null
+  or current_quantity <= 0

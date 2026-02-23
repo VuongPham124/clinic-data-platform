@@ -7,3 +7,4 @@ where
   and clinic_key is not null
   and medicine_key is not null
   and lot_key is not null
+  and current_quantity > 0

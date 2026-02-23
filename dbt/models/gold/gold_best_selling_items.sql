@@ -10,6 +10,16 @@ d as (
     from {{ source('platinum', 'dim_date') }}
 ),
 
+clinic as (
+    select clinic_key, clinic_id, clinic_name
+    from {{ source('platinum', 'dim_clinics') }}
+),
+
+medicine as (
+    select medicine_key, medicine_id, medicine_name
+    from {{ source('platinum', 'dim_medicines') }}
+),
+
 monthly_sales as (
     select
         f.clinic_key,
@@ -24,15 +34,19 @@ monthly_sales as (
 )
 
 select
-    clinic_key,
-    medicine_key,
-    year,
-    month,
-    total_quantity_exported,
+    c.clinic_name,
+    m.medicine_name,
+    ms.year,
+    ms.month,
+    ms.total_quantity_exported,
 
     rank() over (
-        partition by clinic_key, year, month
-        order by total_quantity_exported desc
+        partition by ms.clinic_key, ms.year, ms.month
+        order by ms.total_quantity_exported desc
     ) as rank
 
-from monthly_sales
+from monthly_sales ms
+join clinic c
+  on ms.clinic_key = c.clinic_key
+join medicine m
+  on ms.medicine_key = m.medicine_key

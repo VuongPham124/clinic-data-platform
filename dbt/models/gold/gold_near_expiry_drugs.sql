@@ -8,12 +8,21 @@ with f as (
 lot as (
     select *
     from {{ source('platinum', 'dim_medicines_lot') }}
+),
+
+clinic as (
+    select clinic_key, clinic_id, clinic_name
+    from {{ source('platinum', 'dim_clinics') }}
+),
+
+medicine as (
+    select medicine_key, medicine_id, medicine_name
+    from {{ source('platinum', 'dim_medicines') }}
 )
 
 select
-    f.clinic_key,
-    f.medicine_key,
-    f.lot_key,
+    c.clinic_name,
+    m.medicine_name,
     lot.medicine_import_detail_id,
 
     lot.expire_date,
@@ -29,4 +38,8 @@ select
 from f
 join lot
   on f.lot_key = lot.lot_key
+join clinic c
+  on f.clinic_key = c.clinic_key
+join medicine m
+  on f.medicine_key = m.medicine_key
 where f.current_quantity > 0
