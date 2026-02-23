@@ -20,7 +20,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=60,
         allowed_states=["success"],
-        failed_states=["failed", "upstream_failed"],
+        failed_states=["failed"],
     )
 
     trigger_silver_curated_dq = TriggerDagRunOperator(
@@ -29,7 +29,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=60,
         allowed_states=["success"],
-        failed_states=["failed", "upstream_failed"],
+        failed_states=["failed"],
     )
 
     trigger_gen_master = TriggerDagRunOperator(
@@ -38,7 +38,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=60,
         allowed_states=["success"],
-        failed_states=["failed", "upstream_failed"],
+        failed_states=["failed"],
     )
 
     trigger_dbt = TriggerDagRunOperator(
@@ -47,7 +47,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=60,
         allowed_states=["success"],
-        failed_states=["failed", "upstream_failed"],
+        failed_states=["failed"],
     )
 
     trigger_full_batch >> trigger_silver_curated_dq >> trigger_gen_master >> trigger_dbt
