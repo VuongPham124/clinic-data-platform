@@ -11,7 +11,7 @@ VN_TZ = pendulum.timezone("Asia/Ho_Chi_Minh")
 with DAG(
     dag_id="cdc_daily_to_silver",
     start_date=pendulum.datetime(2026, 2, 2, tz=VN_TZ),
-    schedule="0 2 * * *",     # chạy 02:00 ICT mỗi ngày (tuỳ bạn)
+    schedule=None,     # chạy 02:00 ICT mỗi ngày "0 2 * * *"
     catchup=False,            # IMPORTANT: tránh backfill tự động
     max_active_runs=1,        # IMPORTANT: tránh watermark race giữa runs
     default_args={"retries": 1},
@@ -85,7 +85,7 @@ with DAG(
 
                 # --- ADDED: include spark-avro jar so Spark can read AVRO inputs ---
                 # Equivalent to: gcloud dataproc jobs submit pyspark ... --jars=...
-                "jar_file_uris": ["gs://amaz-utils/spark-avro_2.12-3.5.0.jar"],
+                "jar_file_uris": ["gs://wata-amaz-utils/spark-avro_2.12-3.5.0.jar"],
                 # ---------------------------------------------------------------
 
                 # --- ADDED: Spark properties (same as --properties) ---
