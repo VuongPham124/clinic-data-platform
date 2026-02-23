@@ -119,10 +119,7 @@ models:
       - name: medicine_name
         tests: [not_null]
 
-      - name: lot_key
-        tests: [not_null]
-
-      - name: current_quantity
+      - name: total_current_quantity
         tests: [not_null]
 
       - name: items_sold_prev_month
