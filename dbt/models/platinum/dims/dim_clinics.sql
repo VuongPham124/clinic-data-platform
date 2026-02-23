@@ -6,6 +6,7 @@ with src as (
     cast(`name` AS string) AS clinic_name,
     cast(`address` AS string) AS clinic_address,
     cast(`is_active` AS boolean) AS is_active,
+    cast(`user_id` AS int64) AS admin_user_id,
     cast(`open_time` AS string) AS open_time,
     cast(`close_time` AS string) AS close_time
   from {{ source('silver', 'clinics') }}

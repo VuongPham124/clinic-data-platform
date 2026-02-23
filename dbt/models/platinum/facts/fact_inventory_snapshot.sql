@@ -59,7 +59,7 @@ joined as (
     from calculated c
 
     left join {{ ref('dim_clinics') }} as dc
-        on dc.clinic_id = c.clinic_id
+        on dc.admin_user_id = c.clinic_id
 
     left join {{ ref('dim_medicines') }} as dm
         on dm.medicine_id = c.medicine_id

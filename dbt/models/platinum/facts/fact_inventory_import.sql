@@ -31,7 +31,7 @@ joined as (
         on d.full_date = date(s.created_ts)
 
     left join {{ ref('dim_clinics') }} c
-        on c.clinic_id = s.clinic_id
+        on c.admin_user_id = s.clinic_id
 
     left join {{ ref('dim_medicines') }} m
         on m.medicine_id = s.medicine_id

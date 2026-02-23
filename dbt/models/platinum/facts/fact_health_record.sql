@@ -12,7 +12,7 @@ with hr as (
 base as (
   select
     cast(health_record_id as string) as health_record_id,
-    abs(farm_fingerprint(cast(clinic_id as string))) as clinic_key,
+    c.clinic_key,
     cast(format_timestamp('%Y%m%d', record_ts) as int64) as record_date_key,
 
     -- age_group_key: bucket hóa đơn giản (bạn có thể thay bằng dim_age_group join)
@@ -25,6 +25,8 @@ base as (
       else 5
     end as age_group_key
   from hr
+  join {{ ref('dim_clinics') }} c
+    on c.admin_user_id = hr.clinic_id
 )
 
 select *
