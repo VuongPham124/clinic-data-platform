@@ -67,13 +67,10 @@ models:
         tests: [not_null]
   - name: gold_near_expiry_drugs
     columns:
-      - name: clinic_key
+      - name: clinic_name
         tests: [not_null]
 
-      - name: medicine_key
-        tests: [not_null]
-
-      - name: lot_key
+      - name: medicine_name
         tests: [not_null]
 
       - name: medicine_import_detail_id
@@ -95,10 +92,10 @@ models:
               values: ['red', 'yellow', 'green']
   - name: gold_best_selling_items
     columns:
-      - name: clinic_key
+      - name: clinic_name
         tests: [not_null]
 
-      - name: medicine_key
+      - name: medicine_name
         tests: [not_null]
 
       - name: year
@@ -116,10 +113,10 @@ models:
 
   - name: gold_low_stock_items
     columns:
-      - name: clinic_key
+      - name: clinic_name
         tests: [not_null]
 
-      - name: medicine_key
+      - name: medicine_name
         tests: [not_null]
 
       - name: lot_key
