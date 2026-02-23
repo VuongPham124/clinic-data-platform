@@ -11,7 +11,7 @@ VN_TZ = pendulum.timezone("Asia/Ho_Chi_Minh")
 with DAG(
     dag_id="cdc_daily_to_silver",
     start_date=pendulum.datetime(2026, 2, 2, tz=VN_TZ),
-    schedule="0 2 * * *",     # chạy 02:00 ICT mỗi ngày (tuỳ bạn)
+    schedule=None,     # chạy 02:00 ICT mỗi ngày "0 2 * * *"
     catchup=False,            # IMPORTANT: tránh backfill tự động
     max_active_runs=1,        # IMPORTANT: tránh watermark race giữa runs
     default_args={"retries": 1},
