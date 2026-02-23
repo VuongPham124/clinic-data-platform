@@ -85,7 +85,7 @@ with DAG(
 
                 # --- ADDED: include spark-avro jar so Spark can read AVRO inputs ---
                 # Equivalent to: gcloud dataproc jobs submit pyspark ... --jars=...
-                "jar_file_uris": ["gs://amaz-utils/spark-avro_2.12-3.5.0.jar"],
+                "jar_file_uris": ["gs://wata-amaz-utils/spark-avro_2.12-3.5.0.jar"],
                 # ---------------------------------------------------------------
 
                 # --- ADDED: Spark properties (same as --properties) ---
