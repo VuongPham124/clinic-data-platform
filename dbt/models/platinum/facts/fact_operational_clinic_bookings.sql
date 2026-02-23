@@ -95,7 +95,6 @@ rev as (
       from unnest(json_query_array(metadata, '$.payment_data')) as item
     ), 0) as paid_amount
   from b 
-  where from_ts < finished_ts and created_ts < confirmed_ts
 ),
 
 bk as (
@@ -112,18 +111,16 @@ bk as (
     cast(format_timestamp('%Y%m%d', finished_ts) as int64) as finished_date_key,
     cast(format_timestamp('%Y%m%d', canceled_ts) as int64) as canceled_date_key,
 
-    (finished_ts != 0001-01-01 00:00:00) as is_completed,
+    (finished_ts != TIMESTAMP `0001-01-01 00:00:00`) as is_completed,
 
     case
-      when created_ts is not null and confirmed_ts is not null
-        then timestamp_diff(confirmed_ts, created_ts, second)
-      else null
+      when created_ts < confirmed_ts 
+      then timestamp_diff(confirmed_ts, created_ts, second)
     end as confirm_duration_sec,
 
-    case
-      when from_ts is not null and finished_ts is not null
-        then timestamp_diff(finished_ts, from_ts, second)
-      else null
+    case 
+      when from_ts < finished_ts 
+      then timestamp_diff(finished_ts, from_ts, second)
     end as consult_duration_sec,
 
     -- revenue fields
