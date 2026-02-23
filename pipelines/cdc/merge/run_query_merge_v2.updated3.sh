@@ -138,8 +138,16 @@ for t,cfg in tables.items():
     # Validate table identifier and all column names to prevent SQL injection
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?", t):
         raise SystemExit(f"Invalid table name in contract: {t}")
-    # ADDED: decimal_fields (Option A) for numeric casting in Silver merge
-    dec_fields = (cfg.get("decimal_fields") or [])
+    # ADDED: decimal_fields (Option A) for numeric casting in Silver merge.
+    # Fallback: infer decimal/numeric columns from schema types in case decimal_fields is missing.
+    dec_fields = list(cfg.get("decimal_fields") or [])
+    schema = cfg.get("schema") if isinstance(cfg.get("schema"), dict) else {}
+    inferred_dec = [
+        k for k, v in schema.items()
+        if isinstance(v, str) and re.search(r"(decimal|numeric)", v, re.IGNORECASE)
+    ]
+    if inferred_dec:
+        dec_fields = sorted(set(dec_fields).union(inferred_dec))
     validate_ident_list(pk(cfg), "primary_key", t)
     validate_ident_list(cols(cfg), "columns", t)
     validate_ident_list((cfg.get("timestamp_fields") or []), "timestamp_fields", t)
@@ -289,8 +297,50 @@ while IFS='|' read -r TABLE_ID PK_CSV COLS_CSV TS_CSV DEC_CSV; do  # ADDED: DEC_
   WHERE CAST(__source_date_local AS STRING)='${SRC_DATE}'
     AND CAST(__run_id AS STRING)='${RUN_ID}';
 
-  INSERT INTO \`${STAGE_SQL}\`
-  SELECT * FROM \`${TEMP_SQL}\`;
+  DECLARE insert_expr STRING;
+  SET insert_expr = (
+    SELECT STRING_AGG(
+      CASE
+        WHEN tc.column_name IS NULL THEN
+          FORMAT('CAST(NULL AS %s) AS \`%s\`', sc.data_type, sc.column_name)
+        WHEN sc.data_type = 'STRING' THEN
+          FORMAT('CAST(t.\`%s\` AS STRING) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'INT64' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS INT64) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'NUMERIC' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS NUMERIC) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'BIGNUMERIC' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS BIGNUMERIC) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'FLOAT64' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS FLOAT64) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'BOOL' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS BOOL) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'TIMESTAMP' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS TIMESTAMP) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'DATE' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS DATE) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'DATETIME' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS DATETIME) AS \`%s\`', sc.column_name, sc.column_name)
+        WHEN sc.data_type = 'TIME' THEN
+          FORMAT('SAFE_CAST(t.\`%s\` AS TIME) AS \`%s\`', sc.column_name, sc.column_name)
+        ELSE
+          FORMAT('t.\`%s\` AS \`%s\`', sc.column_name, sc.column_name)
+      END
+      ORDER BY sc.ordinal_position
+    )
+    FROM \`${PROJECT_ID}.bq_stage.INFORMATION_SCHEMA.COLUMNS\` sc
+    LEFT JOIN \`${PROJECT_ID}.bq_stage.INFORMATION_SCHEMA.COLUMNS\` tc
+      ON tc.table_name = '${TABLE_ID}_cdc__load_${RUN_ID//[^a-zA-Z0-9_]/_}'
+     AND tc.column_name = sc.column_name
+    WHERE sc.table_name = '${TABLE_ID}_cdc'
+  );
+
+  EXECUTE IMMEDIATE FORMAT(
+    'INSERT INTO \`%s\` SELECT %s FROM \`%s\` t',
+    '${STAGE_SQL}',
+    insert_expr,
+    '${TEMP_SQL}'
+  );
   " > /tmp/bq_stage_upsert_out.txt 2>&1; then
     echo "[ERROR] stage upsert failed for ${TABLE_ID}"
     cat /tmp/bq_stage_upsert_out.txt
