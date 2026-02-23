@@ -94,7 +94,8 @@ rev as (
       select sum(cast(json_value(item, '$.amount') as numeric))
       from unnest(json_query_array(metadata, '$.payment_data')) as item
     ), 0) as paid_amount
-  from b
+  from b 
+  where from_ts < finished_ts and created_ts < confirmed_ts
 ),
 
 bk as (
@@ -111,7 +112,7 @@ bk as (
     cast(format_timestamp('%Y%m%d', finished_ts) as int64) as finished_date_key,
     cast(format_timestamp('%Y%m%d', canceled_ts) as int64) as canceled_date_key,
 
-    (finished_ts is not null and canceled_ts is null) as is_completed,
+    (finished_ts is not `0001-01-01 00:00:00`) as is_completed,
 
     case
       when created_ts is not null and confirmed_ts is not null
