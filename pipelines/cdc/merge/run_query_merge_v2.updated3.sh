@@ -293,10 +293,6 @@ while IFS='|' read -r TABLE_ID PK_CSV COLS_CSV TS_CSV DEC_CSV; do  # ADDED: DEC_
   # ----- Idempotent stage upsert by (SRC_DATE, RUN_ID) -----
   echo "=== UPSERT bq_stage.${TABLE_ID}_cdc (idempotent by src_date+run_id) ==="
   if ! bq --location="$LOCATION" query --use_legacy_sql=false "
-  DELETE FROM \`${STAGE_SQL}\`
-  WHERE CAST(__source_date_local AS STRING)='${SRC_DATE}'
-    AND CAST(__run_id AS STRING)='${RUN_ID}';
-
   DECLARE insert_expr STRING;
   SET insert_expr = (
     SELECT STRING_AGG(
@@ -334,6 +330,10 @@ while IFS='|' read -r TABLE_ID PK_CSV COLS_CSV TS_CSV DEC_CSV; do  # ADDED: DEC_
      AND tc.column_name = sc.column_name
     WHERE sc.table_name = '${TABLE_ID}_cdc'
   );
+
+  DELETE FROM \`${STAGE_SQL}\`
+  WHERE CAST(__source_date_local AS STRING)='${SRC_DATE}'
+    AND CAST(__run_id AS STRING)='${RUN_ID}';
 
   EXECUTE IMMEDIATE FORMAT(
     'INSERT INTO \`%s\` SELECT %s FROM \`%s\` t',
