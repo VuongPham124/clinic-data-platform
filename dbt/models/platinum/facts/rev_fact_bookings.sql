@@ -16,16 +16,13 @@ with base_data as (
 ), joined as (
   select
     base_data.*,
-    dc.clinic_key,
-    dd.doctor_key,
-    dp.patient_key
+    cast(rd.id as int64) as doctor_key,
+    cast(rp.id as int64) as patient_key
   from base_data
-  left join {{ ref('dim_clinics') }} as dc
-    on dc.admin_user_id = base_data.clinic_id
-  left join {{ ref('dim_clinic_doctors') }} as dd
-    on dd.doctor_id = base_data.doctor_id
-  left join {{ ref('dim_clinic_patients') }} as dp
-    on dp.patient_id = base_data.patient_id
+  left join {{ ref('rev_dim_doctors') }} as rd
+    on cast(rd.id as int64) = base_data.doctor_id
+  left join {{ ref('rev_dim_patients') }} as rp
+    on cast(rp.id as int64) = base_data.patient_id
 )
 
 select
