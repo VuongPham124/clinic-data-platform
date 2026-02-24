@@ -4,8 +4,6 @@ with base_data as (
   select
     b.*,
     CAST(FORMAT_TIMESTAMP('%Y%m%d', CAST(from_time AS TIMESTAMP)) AS INT64) AS booking_date_key,
-    abs(farm_fingerprint(cast(doctor_id as string))) as doctor_key,
-    abs(farm_fingerprint(cast(patient_id as string))) as patient_key,
     cast(coalesce(nullif(cast(b.patient_paying_amount as string), ''), '0') as numeric) as clean_patient_paying,
     cast(coalesce(nullif(cast(b.doctor_earning_amount as string), ''), '0') as numeric) as clean_doctor_earning,
     cast(coalesce(nullif(cast(b.patient_discount_amount as string), ''), '0') as numeric) as clean_patient_discount,
@@ -15,10 +13,23 @@ with base_data as (
   from {{ source('silver', 'bookings') }} b
   where b.deleted_at is null
     and regexp_contains(cast(b.price as string), r'^[0-9.]+$')
+), joined as (
+  select
+    base_data.*,
+    dc.clinic_key,
+    dd.doctor_key,
+    dp.patient_key
+  from base_data
+  left join {{ ref('dim_clinics') }} as dc
+    on dc.admin_user_id = base_data.clinic_id
+  left join {{ ref('dim_clinic_doctors') }} as dd
+    on dd.doctor_id = base_data.doctor_id
+  left join {{ ref('dim_clinic_patients') }} as dp
+    on dp.patient_id = base_data.patient_id
 )
 
 select
-  base_data.*,
+  joined.*,
 
   (clean_patient_paying - clean_doctor_earning) as amaz_net_revenue,
 
@@ -45,4 +56,4 @@ select
   safe.parse_date('%Y-%m-%d', regexp_extract(cast(created_at as string), r'(\d{4}-\d{2}-\d{2})')) as booking_date,
   current_timestamp() as _transformed_at
 
-from base_data
+from joined
