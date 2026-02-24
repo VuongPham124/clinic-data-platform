@@ -1,6 +1,6 @@
 -- Stage quality by run_date from all bq_stage.*_cdc tables.
--- This query dynamically scans all CDC stage tables and returns
--- null-rate / inferred-rate / freshness indicators for a target date.
+-- Dynamic script version (ad-hoc / manual execution).
+-- IMPORTANT: run query location must be us-central1 (not US).
 
 DECLARE project_id STRING DEFAULT 'wata-clinicdataplatform-gcp';
 DECLARE stage_dataset STRING DEFAULT 'bq_stage';
@@ -8,11 +8,11 @@ DECLARE run_date STRING DEFAULT FORMAT_DATE('%Y-%m-%d', CURRENT_DATE('Asia/Ho_Ch
 
 DECLARE sql_text STRING;
 
-SET sql_text = (
+EXECUTE IMMEDIATE FORMAT("""
   SELECT STRING_AGG(
-    FORMAT("""
+    FORMAT(\"\"\"
       SELECT
-        '%s' AS stage_table,
+        '%%s' AS stage_table,
         @run_date AS source_date_local,
         COUNT(*) AS rows_total,
         COUNTIF(SAFE_CAST(__lsn_num AS INT64) IS NULL) AS rows_lsn_num_null,
@@ -22,16 +22,17 @@ SET sql_text = (
         COUNTIF(CAST(__commit_ts AS TIMESTAMP) IS NULL) AS rows_commit_ts_null,
         MAX(CAST(__commit_ts AS TIMESTAMP)) AS max_commit_ts,
         MAX(CAST(__ingest_ts AS TIMESTAMP)) AS max_ingest_ts
-      FROM `%s.%s.%s`
+      FROM `%%s`
       WHERE CAST(__source_date_local AS STRING) = @run_date
-    """, table_name, project_id, stage_dataset, table_name),
+    \"\"\", table_name, CONCAT('%s.%s.', table_name)),
     " UNION ALL "
   )
-  FROM `${project_id}.${stage_dataset}.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name LIKE '%_cdc'
-);
+  FROM `%s.%s.INFORMATION_SCHEMA.TABLES`
+  WHERE table_name LIKE '%%_cdc'
+""", project_id, stage_dataset, project_id, stage_dataset)
+INTO sql_text;
 
-IF sql_text IS NULL THEN
+IF sql_text IS NULL OR TRIM(sql_text) = '' THEN
   SELECT
     'NO_STAGE_TABLES_FOUND' AS stage_table,
     run_date AS source_date_local,

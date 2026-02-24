@@ -16,29 +16,41 @@ Example:
 bq --location=us-central1 mk --dataset wata-clinicdataplatform-gcp:ops_monitor
 ```
 
-## 3) Create Cloud Logging -> BigQuery sink (for GCS/Datastream SQL)
+## 3) Create Cloud Logging -> BigQuery sink (for log-based SQL)
 
 Create sink target dataset (example `ops_logs`) and include:
-- `cloudaudit.googleapis.com/activity`
-- `cloudaudit.googleapis.com/data_access`
+- `cloudaudit_googleapis_com_data_access`
+- `datastream_googleapis_com_stream_activity`
+- `airflow_scheduler`
+- `airflow_triggerer`
+- `airflow_webserver`
+- `airflow_worker`
+- `dag_processor_manager`
 
 These are required by:
 - `monitoring/sql/06_gcs_ingestion_from_logs.sql`
 - `monitoring/sql/07_datastream_health_from_logs.sql`
+- `monitoring/sql/08_composer_airflow_health_from_logs.sql`
 
 ## 4) Create Scheduled Queries (daily)
 
 Run/clone these SQL files into Scheduled Queries:
 - `monitoring/sql/01_watermark_health.sql`
-- `monitoring/sql/02_stage_run_quality.sql`
-- `monitoring/sql/03_silver_freshness.sql`
 - `monitoring/sql/05_bq_job_health.sql`
 - `monitoring/sql/06_gcs_ingestion_from_logs.sql`
 - `monitoring/sql/07_datastream_health_from_logs.sql`
+- `monitoring/sql/08_composer_airflow_health_from_logs.sql`
 
 For duplicate PK:
 - use `monitoring/sql/04_silver_duplicate_pk_template.sql`
 - create one scheduled query per critical table
+
+Notes on script vs non-script:
+ - Non-script (safe with destination table + write disposition): `01`, `04`, `05`, `06`, `07`, `08`
+- Dynamic script (uses `DECLARE/EXECUTE IMMEDIATE`): `02`, `03`
+  - For `02`, `03` either:
+    1) run manually/ad-hoc, or
+    2) keep as scheduled query without destination write settings and write output in SQL.
 
 Recommended destination table pattern:
 - `ops_monitor.daily_watermark_health`
@@ -47,6 +59,7 @@ Recommended destination table pattern:
 - `ops_monitor.hourly_bq_job_health`
 - `ops_monitor.hourly_gcs_ingestion`
 - `ops_monitor.hourly_datastream_health`
+- `ops_monitor.hourly_composer_airflow_health`
 
 ## 5) Import Cloud Monitoring dashboard JSON
 
@@ -61,6 +74,34 @@ gcloud monitoring dashboards create \
 Then edit filters in dashboard widgets:
 - Replace `PROJECT_ID`
 - Narrow resources (composer env, dataproc cluster, cloud run service, buckets)
+
+## 5.1) Export BigQuery monitor tables to Cloud Monitoring custom metrics
+
+Use exporter in `monitoring/exporter/`:
+- script: `monitoring/exporter/ops_monitor_to_custom_metrics.py`
+- metrics prefix: `custom.googleapis.com/ops/*`
+
+One-command deploy script (PowerShell, supports SA impersonation):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File monitoring/exporter/scripts/deploy_ops_monitor_exporter.ps1 `
+  -ProjectId wata-clinicdataplatform-gcp `
+  -Region us-central1 `
+  -OpsDataset ops_monitor `
+  -DeployerServiceAccount deployer-sa@wata-clinicdataplatform-gcp.iam.gserviceaccount.com
+```
+
+Recommended deploy path:
+1. Build/push container from `monitoring/exporter/Dockerfile`
+2. Deploy Cloud Run Job with env:
+   - `PROJECT_ID=wata-clinicdataplatform-gcp`
+   - `OPS_DATASET=ops_monitor`
+   - `LOCATION=us-central1`
+3. Schedule Cloud Run Job invocation every 5-15 minutes with Cloud Scheduler.
+
+IAM for runtime service account:
+- BigQuery Data Viewer on `ops_monitor` dataset
+- Monitoring Metric Writer (`roles/monitoring.metricWriter`)
 
 ## 6) Configure alert policies
 
