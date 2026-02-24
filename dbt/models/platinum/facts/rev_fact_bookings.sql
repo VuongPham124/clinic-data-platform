@@ -16,13 +16,13 @@ with base_data as (
 ), joined as (
   select
     base_data.*,
-    cast(rd.id as int64) as doctor_key,
-    cast(rp.id as int64) as patient_key
+    rd.doctor_key,
+    rp.patient_key
   from base_data
   left join {{ ref('rev_dim_doctors') }} as rd
-    on cast(rd.id as int64) = base_data.doctor_id
+    on rd.doctor_id = base_data.doctor_id
   left join {{ ref('rev_dim_patients') }} as rp
-    on cast(rp.id as int64) = base_data.patient_id
+    on rp.patient_id = base_data.patient_id
 )
 
 select
