@@ -29,6 +29,7 @@ select
   clinic_name,
   clinic_address,
   is_active,
+  admin_user_id,
   open_time,
   close_time
 from dedup
