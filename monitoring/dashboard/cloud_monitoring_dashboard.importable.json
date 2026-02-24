@@ -1,0 +1,278 @@
+{
+  "displayName": "Clinic Data Platform - Ops Monitor",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "xPos": 0,
+        "yPos": 0,
+        "width": 12,
+        "height": 1,
+        "widget": {
+          "title": "Read Me First",
+          "text": {
+            "content": "Template dashboard for Composer + Dataproc + Datastream + GCS + Cloud Run + Scheduler.\\n\\nBefore import/use:\\n1) Replace PROJECT_ID in every filter.\\n2) Replace composer environment, dataproc cluster, cloud run service labels.\\n3) Create log-based metrics referenced below if you keep those widgets.\\n\\nCompanion SQL monitors are in monitoring/sql/*.sql and should be scheduled in BigQuery."
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 1,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Composer - DAG Task Failures (log-based metric)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/airflow_task_fail_count\" resource.type=\"cloud_composer_environment\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE"
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "failures/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 1,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Composer - Environment Health",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"composer.googleapis.com/environment/healthy\" resource.type=\"cloud_composer_environment\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                "aggregation": {
+                  "alignmentPeriod": "300s",
+                  "perSeriesAligner": "ALIGN_MEAN"
+                }
+              }
+            },
+            "gaugeView": {
+              "lowerBound": 0,
+              "upperBound": 1
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 5,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Dataproc - Running Jobs",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"dataproc.googleapis.com/cluster/jobs/running\" resource.type=\"cloud_dataproc_cluster\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "jobs",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 5,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Dataproc - YARN Memory Utilization",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"dataproc.googleapis.com/cluster/yarn/memory/percent_used\" resource.type=\"cloud_dataproc_cluster\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "%",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 9,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Datastream - Stream Health (log-based metric)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/datastream_error_count\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE"
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "errors/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 9,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "GCS - Bytes Stored (Raw/Staging/Quarantine)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"storage.googleapis.com/storage/total_bytes\" resource.type=\"gcs_bucket\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": [
+                        "resource.label.\"bucket_name\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "bytes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 13,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Run - Request Count",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" resource.label.\"project_id\"=\"PROJECT_ID\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": [
+                        "resource.label.\"service_name\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "req/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 13,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Run - 5xx Count",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" resource.label.\"project_id\"=\"PROJECT_ID\" metric.label.\"response_code_class\"=\"5xx\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": [
+                        "resource.label.\"service_name\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "errors/s",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 17,
+        "width": 12,
+        "height": 2,
+        "widget": {
+          "title": "SQL-based Monitors",
+          "text": {
+            "content": "Use BigQuery Scheduled Queries from monitoring/sql/*.sql for:\\n- watermarks\\n- stage run quality\\n- silver freshness\\n- duplicate PK\\n- BQ job health\\n- GCS and Datastream from log-export tables\\n\\nRecommended: publish SQL outputs into one ops dataset and visualize in Looker Studio."
+          }
+        }
+      }
+    ]
+  }
+}
