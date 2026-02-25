@@ -39,10 +39,11 @@ def _rows(client: bigquery.Client, sql: str) -> Iterable[bigquery.table.Row]:
 
 
 def _split_fqn(table_fqn: str) -> tuple[str, str, str]:
-    m = re.fullmatch(r"`?([^.]+)\.([^.]+)\.([^.]+)`?", table_fqn)
-    if not m:
+    clean = table_fqn.strip().strip("`")
+    parts = clean.split(".")
+    if len(parts) != 3 or any(not p for p in parts):
         raise ValueError(f"Invalid table fqn: {table_fqn}")
-    return m.group(1), m.group(2), m.group(3)
+    return parts[0], parts[1], parts[2]
 
 
 def _has_column(client: bigquery.Client, table_fqn: str, column_name: str) -> bool:
@@ -69,6 +70,18 @@ def _latest_where_clause(client: bigquery.Client, table_fqn: str, preferred_cols
         if _has_column(client, table_fqn, c):
             return f"WHERE {c} = (SELECT MAX({c}) FROM {table_fqn})"
     return ""
+
+
+def _table_exists(client: bigquery.Client, table_fqn: str) -> bool:
+    project, dataset, table = _split_fqn(table_fqn)
+    table_id = f"{project}.{dataset}.{table}"
+    try:
+        client.get_table(table_id)
+        print(f"table_exists: {table_id}=true")
+        return True
+    except Exception as e:
+        print(f"table_exists: {table_id}=false error={e}")
+        return False
 
 
 def _write_points(
@@ -142,6 +155,8 @@ def _dedupe_series(series: List[monitoring_v3.TimeSeries]) -> List[monitoring_v3
 
 def export_daily_watermark_health(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
     table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.daily_watermark_health`"
+    if not _table_exists(bq, table_fqn):
+        return []
     where_clause = _latest_where_clause(bq, table_fqn, ["monitor_date_local", "updated_at"])
     sql = f"""
     SELECT table_name, mins_since_watermark_update, mins_since_last_commit
@@ -158,6 +173,8 @@ def export_daily_watermark_health(bq: bigquery.Client) -> List[monitoring_v3.Tim
 
 def export_hourly_bq_job_health(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
     table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.hourly_bq_job_health`"
+    if not _table_exists(bq, table_fqn):
+        return []
     where_clause = _latest_where_clause(bq, table_fqn, ["hour_bucket", "monitor_ts_utc", "monitor_date_local"])
     sql = f"""
     SELECT *
@@ -182,6 +199,8 @@ def export_hourly_bq_job_health(bq: bigquery.Client) -> List[monitoring_v3.TimeS
 
 def export_hourly_composer_airflow_health(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
     table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.hourly_composer_airflow_health`"
+    if not _table_exists(bq, table_fqn):
+        return []
     where_clause = _latest_where_clause(bq, table_fqn, ["hour_bucket", "monitor_ts_utc", "monitor_date_local"])
     sql = f"""
     SELECT
@@ -205,6 +224,8 @@ def export_hourly_composer_airflow_health(bq: bigquery.Client) -> List[monitorin
 
 def export_hourly_datastream_health(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
     table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.hourly_datastream_health`"
+    if not _table_exists(bq, table_fqn):
+        return []
     where_clause = _latest_where_clause(bq, table_fqn, ["hour_bucket", "monitor_ts_utc", "monitor_date_local"])
     sql = f"""
     SELECT *
@@ -223,6 +244,8 @@ def export_hourly_datastream_health(bq: bigquery.Client) -> List[monitoring_v3.T
 
 def export_hourly_gcs_ingestion(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
     table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.hourly_gcs_ingestion`"
+    if not _table_exists(bq, table_fqn):
+        return []
     where_clause = _latest_where_clause(bq, table_fqn, ["hour_bucket", "monitor_ts_utc", "monitor_date_local"])
     sql = f"""
     SELECT *
@@ -242,17 +265,93 @@ def export_hourly_gcs_ingestion(bq: bigquery.Client) -> List[monitoring_v3.TimeS
     return out
 
 
+def export_hourly_cloud_scheduler_health(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
+    table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.hourly_cloud_scheduler_health`"
+    if not _table_exists(bq, table_fqn):
+        return []
+    where_clause = _latest_where_clause(bq, table_fqn, ["hour_bucket", "latest_event_ts", "monitor_ts_utc", "monitor_date_local"])
+    sql = f"""
+    SELECT *
+    FROM {table_fqn}
+    {where_clause}
+    """
+    out: List[monitoring_v3.TimeSeries] = []
+    for row in _rows(bq, sql):
+        r = _row_to_dict(row)
+        labels = {
+            "job_id": str(r.get("job_id", "unknown") or "unknown"),
+            "scheduler_location": str(r.get("scheduler_location", "unknown") or "unknown"),
+        }
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/total_events", _val(r, ["total_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/error_events", _val(r, ["error_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/http_4xx_5xx_events", _val(r, ["http_4xx_5xx_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/http_5xx_events", _val(r, ["http_5xx_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/success_events", _val(r, ["success_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/non_success_events", _val(r, ["non_success_events"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/scheduler/success_ratio", _val(r, ["success_ratio"]), labels))
+    return out
+
+
+def export_daily_critical_dag_slo(bq: bigquery.Client) -> List[monitoring_v3.TimeSeries]:
+    table_fqn = f"`{PROJECT_ID}.{OPS_DATASET}.daily_critical_dag_slo`"
+    if not _table_exists(bq, table_fqn):
+        return []
+    where_clause = _latest_where_clause(bq, table_fqn, ["monitor_date_local", "monitor_ts_utc"])
+    sql = f"""
+    SELECT *
+    FROM {table_fqn}
+    {where_clause}
+    """
+    out: List[monitoring_v3.TimeSeries] = []
+    for row in _rows(bq, sql):
+        r = _row_to_dict(row)
+        labels = {"dag_id": str(r.get("dag_id", "unknown") or "unknown")}
+        out.append(_make_series("custom.googleapis.com/ops/dag/critical_p95_minutes", _val(r, ["critical_p95_minutes"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/dag/recovery_time_minutes", _val(r, ["recovery_time_minutes"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/dag/restore_buffer_minutes", _val(r, ["restore_buffer_minutes"]), labels))
+        out.append(_make_series("custom.googleapis.com/ops/dag/restore_window_minutes", _val(r, ["restore_window_minutes"]), labels))
+    return out
+
+
 def main() -> None:
-    bq = bigquery.Client(project=PROJECT_ID)
+    bq = bigquery.Client(project=PROJECT_ID, location=LOCATION)
     m = monitoring_v3.MetricServiceClient()
 
     all_series: List[monitoring_v3.TimeSeries] = []
-    all_series.extend(export_daily_watermark_health(bq))
-    all_series.extend(export_hourly_bq_job_health(bq))
-    all_series.extend(export_hourly_composer_airflow_health(bq))
-    all_series.extend(export_hourly_datastream_health(bq))
-    all_series.extend(export_hourly_gcs_ingestion(bq))
+    print(
+        f"Exporter config: PROJECT_ID={PROJECT_ID}, OPS_DATASET={OPS_DATASET}, LOCATION={LOCATION}, "
+        f"NAMESPACE={NAMESPACE}, JOB={JOB}, TASK_ID={TASK_ID}"
+    )
+
+    watermark_series = export_daily_watermark_health(bq)
+    print(f"daily_watermark_health points: {len(watermark_series)}")
+    all_series.extend(watermark_series)
+
+    bq_job_series = export_hourly_bq_job_health(bq)
+    print(f"hourly_bq_job_health points: {len(bq_job_series)}")
+    all_series.extend(bq_job_series)
+
+    composer_series = export_hourly_composer_airflow_health(bq)
+    print(f"hourly_composer_airflow_health points: {len(composer_series)}")
+    all_series.extend(composer_series)
+
+    datastream_series = export_hourly_datastream_health(bq)
+    print(f"hourly_datastream_health points: {len(datastream_series)}")
+    all_series.extend(datastream_series)
+
+    gcs_series = export_hourly_gcs_ingestion(bq)
+    print(f"hourly_gcs_ingestion points: {len(gcs_series)}")
+    all_series.extend(gcs_series)
+
+    scheduler_series = export_hourly_cloud_scheduler_health(bq)
+    print(f"hourly_cloud_scheduler_health points: {len(scheduler_series)}")
+    all_series.extend(scheduler_series)
+
+    dag_slo_series = export_daily_critical_dag_slo(bq)
+    print(f"daily_critical_dag_slo points: {len(dag_slo_series)}")
+    all_series.extend(dag_slo_series)
     all_series = _dedupe_series(all_series)
+    print(f"total points after dedupe: {len(all_series)}")
 
     # Use smaller batches to reduce blast radius on partial failures.
     batch_size = 50

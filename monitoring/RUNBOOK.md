@@ -26,11 +26,13 @@ Create sink target dataset (example `ops_logs`) and include:
 - `airflow_webserver`
 - `airflow_worker`
 - `dag_processor_manager`
+- `cloudscheduler_googleapis_com_executions`
 
 These are required by:
 - `monitoring/sql/06_gcs_ingestion_from_logs.sql`
 - `monitoring/sql/07_datastream_health_from_logs.sql`
 - `monitoring/sql/08_composer_airflow_health_from_logs.sql`
+- `monitoring/sql/10_cloud_scheduler_health_from_logs.sql`
 
 ## 4) Create Scheduled Queries (daily)
 
@@ -40,13 +42,15 @@ Run/clone these SQL files into Scheduled Queries:
 - `monitoring/sql/06_gcs_ingestion_from_logs.sql`
 - `monitoring/sql/07_datastream_health_from_logs.sql`
 - `monitoring/sql/08_composer_airflow_health_from_logs.sql`
+- `monitoring/sql/10_cloud_scheduler_health_from_logs.sql`
+- `monitoring/sql/11_daily_critical_dag_slo.sql`
 
 For duplicate PK:
 - use `monitoring/sql/04_silver_duplicate_pk_template.sql`
 - create one scheduled query per critical table
 
 Notes on script vs non-script:
- - Non-script (safe with destination table + write disposition): `01`, `04`, `05`, `06`, `07`, `08`
+ - Non-script (safe with destination table + write disposition): `01`, `04`, `05`, `06`, `07`, `08`, `10`
 - Dynamic script (uses `DECLARE/EXECUTE IMMEDIATE`): `02`, `03`
   - For `02`, `03` either:
     1) run manually/ad-hoc, or
@@ -60,6 +64,12 @@ Recommended destination table pattern:
 - `ops_monitor.hourly_gcs_ingestion`
 - `ops_monitor.hourly_datastream_health`
 - `ops_monitor.hourly_composer_airflow_health`
+- `ops_monitor.hourly_cloud_scheduler_health`
+- `ops_monitor.daily_critical_dag_slo`
+
+Required input table for DAG SLO:
+- `ops_monitor.dag_run_metrics` with columns:
+  - `dag_id`, `run_id`, `status`, `start_ts`, `end_ts`, `duration_sec` (optional if start/end present)
 
 ## 5) Import Cloud Monitoring dashboard JSON
 
@@ -80,6 +90,11 @@ Then edit filters in dashboard widgets:
 Use exporter in `monitoring/exporter/`:
 - script: `monitoring/exporter/ops_monitor_to_custom_metrics.py`
 - metrics prefix: `custom.googleapis.com/ops/*`
+- includes DAG metrics:
+  - `custom.googleapis.com/ops/dag/critical_p95_minutes`
+  - `custom.googleapis.com/ops/dag/recovery_time_minutes`
+  - `custom.googleapis.com/ops/dag/restore_buffer_minutes`
+  - `custom.googleapis.com/ops/dag/restore_window_minutes`
 
 One-command deploy script (PowerShell, supports SA impersonation):
 
