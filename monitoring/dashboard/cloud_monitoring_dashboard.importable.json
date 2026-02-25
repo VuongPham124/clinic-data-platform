@@ -1,0 +1,413 @@
+{
+  "displayName": "Clinic Data Platform - Ops Monitor (Custom Metrics Only)",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "xPos": 0,
+        "yPos": 0,
+        "width": 12,
+        "height": 2,
+        "widget": {
+          "title": "Read Me First",
+          "text": {
+            "content": "This dashboard uses ONLY exporter metrics from custom.googleapis.com/ops/* .\\n\\nPrerequisites:\\n1) Scheduled queries write to ops_monitor.* tables.\\n2) Exporter job monitoring/exporter/ops_monitor_to_custom_metrics.py runs periodically.\\n3) Replace project_id filter if needed."
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 2,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Watermark Staleness (mins)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/watermark/mins_since_update\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"table_name\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "minutes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 2,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "BQ Failed Ratio",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/bq/failed_ratio\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "ratio",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Composer Error Events",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/composer/error_events\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"component\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "events",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Datastream Error Events",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/datastream/error_events\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"stream_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "events",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 10,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "GCS Error Events",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/gcs/error_events\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"bucket_name\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "events",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 10,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Scheduler Success Ratio",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/scheduler/success_ratio\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"job_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "ratio",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 14,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Scheduler HTTP 5xx Events",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/scheduler/http_5xx_events\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"job_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "events",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 14,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Scheduler Error Events",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/scheduler/error_events\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"job_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "events",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 18,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Critical DAG P95 (minutes)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/dag/critical_p95_minutes\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"dag_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "minutes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 18,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "DAG Recovery Time (minutes)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/dag/recovery_time_minutes\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"dag_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "minutes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 22,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "DAG Restore Buffer (minutes)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/dag/restore_buffer_minutes\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"dag_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "minutes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 22,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "DAG Restore Window (minutes)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"custom.googleapis.com/ops/dag/restore_window_minutes\" resource.type=\"global\" resource.label.\"project_id\"=\"wata-clinicdataplatform-gcp\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "groupByFields": [
+                        "metric.label.\"dag_id\""
+                      ]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "minutes",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

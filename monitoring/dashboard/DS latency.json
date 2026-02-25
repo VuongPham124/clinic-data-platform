@@ -1,0 +1,108 @@
+{
+  "displayName": "DS latency",
+  "dashboardFilters": [],
+  "description": "",
+  "labels": {},
+  "mosaicLayout": {
+    "columns": 48,
+    "tiles": [
+      {
+        "height": 16,
+        "width": 24,
+        "widget": {
+          "title": "Stream latencies [50TH PERCENTILE]",
+          "id": "",
+          "xyChart": {
+            "chartOptions": {
+              "displayHorizontal": false,
+              "mode": "COLOR",
+              "showLegend": false
+            },
+            "dataSets": [
+              {
+                "breakdowns": [],
+                "dimensions": [],
+                "legendTemplate": "",
+                "measures": [],
+                "minAlignmentPeriod": "60s",
+                "plotType": "LINE",
+                "sort": [],
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "outputFullDuration": false,
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "crossSeriesReducer": "REDUCE_PERCENTILE_50",
+                      "groupByFields": [],
+                      "perSeriesAligner": "ALIGN_DELTA"
+                    },
+                    "filter": "metric.type=\"datastream.googleapis.com/stream/latencies\" resource.type=\"datastream.googleapis.com/Stream\""
+                  },
+                  "unitOverride": ""
+                }
+              }
+            ],
+            "thresholds": [
+              {
+                "color": "COLOR_UNSPECIFIED",
+                "direction": "DIRECTION_UNSPECIFIED",
+                "label": "",
+                "targetAxis": "Y1",
+                "value": 30
+              }
+            ],
+            "yAxis": {
+              "label": "",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 24,
+        "height": 16,
+        "width": 24,
+        "widget": {
+          "title": "Data freshness",
+          "id": "",
+          "xyChart": {
+            "chartOptions": {
+              "displayHorizontal": false,
+              "mode": "COLOR",
+              "showLegend": false
+            },
+            "dataSets": [
+              {
+                "breakdowns": [],
+                "dimensions": [],
+                "legendTemplate": "wata-datastream-cdc-v1",
+                "measures": [],
+                "plotType": "LINE",
+                "sort": [],
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "outputFullDuration": false,
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "crossSeriesReducer": "REDUCE_MIN",
+                      "groupByFields": [],
+                      "perSeriesAligner": "ALIGN_MIN"
+                    },
+                    "filter": "(metric.type=\"datastream.googleapis.com/stream/freshness\") AND (resource.type=\"datastream.googleapis.com/Stream\") AND (resource.label.\"stream_id\"=\"wata-datastream-cdc-v1\") AND (resource.label.\"resource_container\"=\"wata-clinicdataplatform-gcp\")"
+                  },
+                  "unitOverride": ""
+                }
+              }
+            ],
+            "thresholds": [],
+            "xAxis": {
+              "label": "",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
