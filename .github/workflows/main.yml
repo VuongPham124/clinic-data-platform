@@ -7,7 +7,8 @@ on:
       - feature/curated_rules_silver #testcurated1
       - feature/test-dbt-composer
       - feature/gen-master
-      - feature/integrate-dag-flows 
+      - feature/integrate-dag-flows
+      - fix/adjust_contract_and_models 
       - test-cicd
 
 jobs:
