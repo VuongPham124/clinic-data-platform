@@ -28,7 +28,7 @@ if (-not [string]::IsNullOrWhiteSpace($DeployerServiceAccount)) {
 $RuntimeSa = "$RuntimeSaName@$ProjectId.iam.gserviceaccount.com"
 $SchedulerCallerSa = "$SchedulerCallerSaName@$ProjectId.iam.gserviceaccount.com"
 $ImageUri = "$Region-docker.pkg.dev/$ProjectId/$Repository/$Image" + ":latest"
-$JobUri = "https://run.googleapis.com/v2/projects/$ProjectId/locations/$Region/jobs/$Job:run"
+$JobUri = "https://run.googleapis.com/v2/projects/$ProjectId/locations/$Region/jobs/$($Job):run"
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ExporterDir = (Resolve-Path (Join-Path $ScriptRoot "..")).Path
 
