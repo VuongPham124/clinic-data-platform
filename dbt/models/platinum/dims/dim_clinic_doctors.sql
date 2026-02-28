@@ -3,7 +3,8 @@
 with src as (
   select
     cast(id as int64) as doctor_id,
-    cast(full_name as string) as doctor_name
+    cast(full_name as string) as doctor_name,
+    cast(clinic_user_id as int64) as clinic_doctor_id
   from {{ source('silver', 'clinic_doctors') }}
 ),
 dedup as (
@@ -20,6 +21,7 @@ dedup as (
 select
   abs(farm_fingerprint(cast(doctor_id as string))) as doctor_key,
   doctor_id,
-  doctor_name
+  doctor_name,
+  clinic_doctor_id
 from dedup
 where doctor_id is not null
