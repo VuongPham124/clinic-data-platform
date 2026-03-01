@@ -9,12 +9,12 @@ debezium.source.publication.autocreate.mode=filtered
 debezium.source.table.include.list=public.clinic_bookings
 
 # Fill these
-debezium.source.database.hostname=113.161.32.204
-debezium.source.database.port=5432
-debezium.source.database.user=de_read_all_data
-debezium.source.database.password=H5%2jER*66
-debezium.source.database.dbname=amaz_care
+debezium.source.database.hostname=
+debezium.source.database.port=
+debezium.source.database.user=
+debezium.source.database.password=
+debezium.source.database.dbname=
 
 # Pub/Sub
-debezium.sink.pubsub.project.id=wata-clinicdataplatform-gcp
-debezium.sink.pubsub.topic.id=raw-cdc-events
+debezium.sink.pubsub.project.id=
+debezium.sink.pubsub.topic.id=
