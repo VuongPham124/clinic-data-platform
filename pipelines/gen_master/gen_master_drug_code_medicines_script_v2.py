@@ -14,7 +14,7 @@ spark-submit \
   --output-bq-table wata-clinicdataplatform-gcp.master.master_drug_map_v1 \
   --temp-gcs-bucket <YOUR_TEMP_BUCKET>
 
-Note: This version processes rows by Spark partition via mapInPandas (no full toPandas on driver).
+Note: This script converts Spark DF -> Pandas for rule verification, so keep data volume reasonable.
 """
 
 import argparse
@@ -95,14 +95,7 @@ def main():
     parser.add_argument("--write-mode", default="overwrite", choices=["overwrite", "append"])
     args = parser.parse_args()
 
-    spark = (
-        SparkSession.builder
-        .appName("master_drug_code_medicines_patch")
-        .config("spark.sql.adaptive.enabled", "true")
-        .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("master_drug_code_medicines_patch").getOrCreate()
     df = load_input_df(
         spark=spark,
         input_bq_table=args.input_bq_table,
@@ -817,6 +810,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
