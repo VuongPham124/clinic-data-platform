@@ -369,7 +369,7 @@ while IFS='|' read -r TABLE_ID PK_CSV COLS_CSV TS_CSV DEC_CSV; do  # ADDED: DEC_
   BSEL="$(build_business_select "$COLS_CSV" "$TS_CSV" "$DEC_CSV")"  # ADDED: pass decimal fields
 
   # ----- MERGE silver (CDC vs inferred/backfill separated) -----
-  MERGE_SQL="
+MERGE_SQL="
 DECLARE wm_lsn INT64 DEFAULT (
   SELECT IFNULL(MAX(last_lsn_num),0)
   FROM \`${PROJECT_ID}.silver_meta.watermarks\`
@@ -381,6 +381,39 @@ DECLARE wm_inf INT64 DEFAULT (
   FROM \`${PROJECT_ID}.silver_meta.watermarks\`
   WHERE table_name='${TABLE_ID}'
 );
+
+-- Run-scoped source to force partition/run pruning before window/merge.
+CREATE TEMP TABLE run_scoped_source AS
+SELECT s.*
+FROM \`${STAGE_SQL}\` s
+WHERE CAST(s.__source_date_local AS STRING)='${SRC_DATE}'
+  AND CAST(s.__run_id AS STRING)='${RUN_ID}'
+  AND (
+    (
+      COALESCE(CAST(s.__lsn_num_inferred AS BOOL), FALSE) = FALSE
+      AND SAFE_CAST(s.__lsn_num AS INT64) > wm_lsn
+    )
+    OR
+    (
+      COALESCE(CAST(s.__lsn_num_inferred AS BOOL), TRUE) = TRUE
+      AND SAFE_CAST(s.__lsn_num AS INT64) > wm_inf
+    )
+  );
+
+CREATE TEMP TABLE run_scoped_latest AS
+SELECT * EXCEPT(rn) FROM (
+  SELECT
+    ${BSEL},
+    CAST(s.__is_deleted AS BOOL) AS is_deleted,
+    SAFE_CAST(s.__lsn_num AS INT64) AS __lsn_num,
+    CAST(s.__commit_ts AS TIMESTAMP) AS __commit_ts,
+    ROW_NUMBER() OVER (
+      PARTITION BY ${PART}
+      ORDER BY SAFE_CAST(s.__lsn_num AS INT64) DESC, s.__commit_ts DESC, s.__run_id DESC
+    ) rn
+  FROM run_scoped_source s
+)
+WHERE rn = 1;
 
 CREATE TABLE IF NOT EXISTS \`${SILVER_SQL}\` AS
 SELECT
@@ -401,38 +434,9 @@ WHERE rn = 1;
 
 MERGE \`${SILVER_SQL}\` T
 USING (
-  SELECT * EXCEPT(rn) FROM (
-    -- CDC-real
-    SELECT
-      ${BSEL},
-      CAST(s.__is_deleted AS BOOL) AS is_deleted,
-      SAFE_CAST(s.__lsn_num AS INT64) AS __lsn_num,
-      CAST(s.__commit_ts AS TIMESTAMP) AS __commit_ts,
-      ROW_NUMBER() OVER (
-        PARTITION BY ${PART}
-        ORDER BY SAFE_CAST(s.__lsn_num AS INT64) DESC, s.__commit_ts DESC, s.__run_id DESC
-      ) rn
-    FROM \`${STAGE_SQL}\` s
-    WHERE COALESCE(CAST(s.__lsn_num_inferred AS BOOL), FALSE) = FALSE
-      AND SAFE_CAST(s.__lsn_num AS INT64) > wm_lsn
-
-    UNION ALL
-
-    -- inferred/backfill
-    SELECT
-      ${BSEL},
-      CAST(s.__is_deleted AS BOOL) AS is_deleted,
-      SAFE_CAST(s.__lsn_num AS INT64) AS __lsn_num,
-      CAST(s.__commit_ts AS TIMESTAMP) AS __commit_ts,
-      ROW_NUMBER() OVER (
-        PARTITION BY ${PART}
-        ORDER BY SAFE_CAST(s.__lsn_num AS INT64) DESC, s.__commit_ts DESC, s.__run_id DESC
-      ) rn
-    FROM \`${STAGE_SQL}\` s
-    WHERE COALESCE(CAST(s.__lsn_num_inferred AS BOOL), TRUE) = TRUE
-      AND SAFE_CAST(s.__lsn_num AS INT64) > wm_inf
-  )
-  WHERE rn = 1
+  SELECT
+    *
+  FROM run_scoped_latest
 ) S
 ON ${JOIN}
 
@@ -450,23 +454,23 @@ USING (
   SELECT
     '${TABLE_ID}' AS table_name,
     (SELECT MAX(SAFE_CAST(__lsn_num AS INT64))
-     FROM \`${STAGE_SQL}\`
+     FROM run_scoped_source
      WHERE COALESCE(CAST(__lsn_num_inferred AS BOOL), FALSE) = FALSE
     ) AS last_lsn_num,
     (SELECT MAX(SAFE_CAST(__lsn_num AS INT64))
-     FROM \`${STAGE_SQL}\`
+     FROM run_scoped_source
      WHERE COALESCE(CAST(__lsn_num_inferred AS BOOL), TRUE) = TRUE
     ) AS last_inferred_seq,
-    (SELECT MAX(CAST(__commit_ts AS TIMESTAMP)) FROM \`${STAGE_SQL}\`) AS last_commit_ts,
+    (SELECT MAX(CAST(__commit_ts AS TIMESTAMP)) FROM run_scoped_source) AS last_commit_ts,
     '${RUN_ID}' AS last_run_id,
     CURRENT_TIMESTAMP() AS updated_at
 ) X
 ON W.table_name = X.table_name
 
 WHEN MATCHED THEN UPDATE SET
-  last_lsn_num = COALESCE(X.last_lsn_num, W.last_lsn_num),
-  last_inferred_seq = COALESCE(X.last_inferred_seq, W.last_inferred_seq),
-  last_commit_ts = COALESCE(X.last_commit_ts, W.last_commit_ts),
+  last_lsn_num = GREATEST(IFNULL(W.last_lsn_num, 0), IFNULL(X.last_lsn_num, 0)),
+  last_inferred_seq = GREATEST(IFNULL(W.last_inferred_seq, 0), IFNULL(X.last_inferred_seq, 0)),
+  last_commit_ts = COALESCE(GREATEST(W.last_commit_ts, X.last_commit_ts), W.last_commit_ts, X.last_commit_ts),
   last_run_id = X.last_run_id,
   updated_at = X.updated_at
 
