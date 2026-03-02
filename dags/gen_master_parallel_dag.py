@@ -51,8 +51,31 @@ with DAG(
         else [BIGQUERY_CONNECTOR_JAR_URI]
     )
 
-    SPARK_PROPS = {
+    # Balanced resource profile for small cluster:
+    # - 2 workers, each n4-standard-2 (2 vCPU / 8GB)
+    # Keep each parallel job bounded to avoid one job starving the other.
+    SPARK_PROPS_PATIENT = {
         "spark.sql.debug.maxToStringFields": "2000",
+        "spark.dynamicAllocation.enabled": "false",
+        "spark.executor.instances": "1",
+        "spark.executor.cores": "1",
+        "spark.executor.memory": "2g",
+        "spark.executor.memoryOverhead": "512m",
+        "spark.driver.memory": "1g",
+        "spark.sql.shuffle.partitions": "8",
+        "spark.default.parallelism": "4",
+    }
+
+    SPARK_PROPS_DRUG = {
+        "spark.sql.debug.maxToStringFields": "2000",
+        "spark.dynamicAllocation.enabled": "false",
+        "spark.executor.instances": "1",
+        "spark.executor.cores": "1",
+        "spark.executor.memory": "2g",
+        "spark.executor.memoryOverhead": "512m",
+        "spark.driver.memory": "1g",
+        "spark.sql.shuffle.partitions": "8",
+        "spark.default.parallelism": "4",
     }
 
     MASTER_PATIENT_MAIN_PY = (
@@ -74,7 +97,7 @@ with DAG(
             "pyspark_job": {
                 "main_python_file_uri": MASTER_PATIENT_MAIN_PY,
                 "jar_file_uris": JAR_FILE_URIS,
-                "properties": SPARK_PROPS,
+                "properties": SPARK_PROPS_PATIENT,
                 "args": [
                     "--temp-gcs-bucket", TEMP_GCS_BUCKET,
                 ],
@@ -92,7 +115,7 @@ with DAG(
             "pyspark_job": {
                 "main_python_file_uri": MASTER_DRUG_MAIN_PY,
                 "jar_file_uris": JAR_FILE_URIS,
-                "properties": SPARK_PROPS,
+                "properties": SPARK_PROPS_DRUG,
                 "args": [
                     "--temp-gcs-bucket", TEMP_GCS_BUCKET,
                 ],
