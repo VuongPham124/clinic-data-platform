@@ -269,6 +269,25 @@ def align_df_to_bq_table_schema(spark, df, table_fqn: str):
     return df.select(*select_exprs), True
 
 
+def resolve_partitions(rule_tbl: dict, source_parts: int):
+    """
+    Adaptive partitioning with optional table-level overrides from rules JSON:
+      "performance": { "good_partitions": 24, "bad_partitions": 8 }
+    """
+    perf_cfg = (rule_tbl or {}).get("performance") or {}
+    good_override = perf_cfg.get("good_partitions")
+    bad_override = perf_cfg.get("bad_partitions")
+
+    safe_source = max(int(source_parts or 1), 1)
+    adaptive_good = max(4, min(96, safe_source))
+    adaptive_bad = max(2, min(48, safe_source // 2 if safe_source > 1 else 2))
+
+    good_parts = int(good_override) if good_override is not None else adaptive_good
+    bad_parts = int(bad_override) if bad_override is not None else adaptive_bad
+
+    return max(1, good_parts), max(1, bad_parts)
+
+
 # -----------------------------
 # ADDED: Robust rule lookup by multiple aliases
 # -----------------------------
@@ -322,6 +341,10 @@ def main():
              .appName("silver_to_silver_curated_dq_v2_2_1")
              .config("spark.sql.session.timeZone", timezone_str)
              .config("temporaryGcsBucket", args.temp_gcs_bucket)
+             .config("spark.sql.adaptive.enabled", "true")
+             .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
+             .config("spark.sql.adaptive.skewJoin.enabled", "true")
+             .config("spark.sql.adaptive.advisoryPartitionSizeInBytes", str(128 * 1024 * 1024))
              .getOrCreate())
 
     if args.tables.strip().upper() == "ALL":
@@ -411,14 +434,20 @@ def main():
         # Build DQ condition and split good/bad
         bad_cond, dq_reasons = build_dq_conditions(df, pk_cols, col_rules)
 
-        bad_df = df.filter(bad_cond) if dq_reasons else df.limit(0)
-        good_df = df.filter(~bad_cond) if dq_reasons else df
+        if dq_reasons:
+            classified_df = df.withColumn("__is_bad", bad_cond)
+        else:
+            classified_df = df.withColumn("__is_bad", F.lit(False))
 
         # Add dq columns for bad records
         if dq_reasons:
-            bad_df = add_dq_columns(bad_df, dq_reasons)
+            bad_df = add_dq_columns(classified_df.filter(F.col("__is_bad")), dq_reasons)
         else:
-            bad_df = bad_df.withColumn("dq_reason", F.lit(None).cast("string")).withColumn("dq_columns", F.lit(None).cast("string"))
+            bad_df = (classified_df
+                      .filter(F.col("__is_bad"))
+                      .withColumn("dq_reason", F.lit(None).cast("string"))
+                      .withColumn("dq_columns", F.lit(None).cast("string")))
+        good_df = classified_df.filter(~F.col("__is_bad")).drop("__is_bad")
 
         # Audit columns
         good_df = (good_df
@@ -429,12 +458,13 @@ def main():
                   .withColumn("__dq_loaded_at", F.current_timestamp())
                   .withColumn("__dq_source_table", F.lit(ct)))
 
-        # OPTIMIZATION: persist + repartition (KEPT v2)
-        good_df = good_df.persist()
-        bad_df = bad_df.persist()
+        # Adaptive repartition by source partitions with optional table-level overrides.
+        source_parts = df.rdd.getNumPartitions()
+        good_parts, bad_parts = resolve_partitions(rule_tbl, source_parts)
+        print(f"[INFO] Partitions for {ct}: source={source_parts} good={good_parts} bad={bad_parts}")
 
-        good_df = good_df.repartition(16)
-        bad_df = bad_df.repartition(8)
+        good_df = good_df.repartition(good_parts).persist()
+        bad_df = bad_df.repartition(bad_parts).persist()
 
         # Write curated (overwrite)
         (good_df.write.format("bigquery")
@@ -453,17 +483,15 @@ def main():
          .mode(write_mode)
          .save())
 
-        # Metrics: 1-pass collection (KEPT v2)
-        metrics = (
-            good_df.select(F.lit("good").alias("type"))
-            .unionByName(bad_df.select(F.lit("bad").alias("type")))
-            .groupBy("type")
+        # Metrics: one pass from classified frame to avoid extra union workload.
+        metrics = (classified_df
+            .groupBy("__is_bad")
             .count()
             .collect()
         )
         total = sum(r["count"] for r in metrics)
-        good = next((r["count"] for r in metrics if r["type"] == "good"), 0)
-        bad = next((r["count"] for r in metrics if r["type"] == "bad"), 0)
+        bad = next((r["count"] for r in metrics if r["__is_bad"] is True), 0)
+        good = total - bad
 
         metrics_rows.append((run_id, ct, total, good, bad, datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")))
         print(f"[OK] {ct} total={total} good={good} bad={bad}")

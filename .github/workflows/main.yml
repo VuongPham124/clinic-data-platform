@@ -8,7 +8,8 @@ on:
       - feature/test-dbt-composer
       - feature/gen-master
       - feature/integrate-dag-flows
-      - fix/adjust_contract_and_models 
+      - fix/adjust_contract_and_models
+      - opt/optimization 
       - test-cicd
 
 jobs:
