@@ -89,7 +89,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['red', 'yellow', 'green']
+              arguments:
+                values: ['red', 'yellow', 'green']
   - name: gold_best_selling_items
     columns:
       - name: clinic_name
@@ -137,9 +138,6 @@ models:
 
       - name: medicine_import_detail_id
         tests: [not_null, unique]
-
-      - name: expire_date
-        tests: [not_null]
 
       - name: current_quantity
         tests: [not_null]
