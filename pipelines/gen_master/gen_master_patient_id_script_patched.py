@@ -348,17 +348,6 @@ def main():
     write_bq(patients_enriched, args.out_patients_table, args.temp_gcs_bucket, args.write_mode)
     write_bq(clinic_patients_enriched, args.out_clinic_patients_table, args.temp_gcs_bucket, args.write_mode)
 
-    # Print small samples to driver logs
-    print("\n[INFO] Sample patients_enriched:")
-    patients_enriched.select(
-        *[c for c in ["id", "user_id", "user_full_name", "user_dob", "user_phone_number", "master_patient_id"] if c in patients_enriched.columns]
-    ).show(10, truncate=False)
-
-    print("\n[INFO] Sample clinic_patients_enriched:")
-    clinic_patients_enriched.select(
-        *[c for c in ["id", "user_id", "clinic_user_full_name", "clinic_user_dob", "clinic_user_phone_number", "master_patient_id"] if c in clinic_patients_enriched.columns]
-    ).show(10, truncate=False)
-
     spark.stop()
 
 
