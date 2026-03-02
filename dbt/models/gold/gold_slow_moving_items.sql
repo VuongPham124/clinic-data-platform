@@ -38,9 +38,9 @@ lot_sold_last_3m as (
     from export_f e
     join d
       on e.date_key = d.date_key
-    where date_from_parts(d.year, d.month, 1)
+    where DATE(d.year, d.month, 1)
           >= date_trunc(date_sub(current_date, interval 3 month), month)
-      and date_from_parts(d.year, d.month, 1)
+      and DATE(d.year, d.month, 1)
           < date_trunc(current_date, month)
 ),
 
