@@ -19,7 +19,7 @@
 --   or consult_duration_sec is null
 
 
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 select *
 from {{ ref('fact_operational_clinic_bookings') }}

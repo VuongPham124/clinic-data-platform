@@ -41,7 +41,7 @@
 --  and r.doctor_key = base.doctor_key
 -- where base.prescription_id is not null
 
-{{ config(materialized='table') }}
+{{ config(materialized='view') }}
 
 with p as (
   select

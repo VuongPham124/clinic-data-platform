@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 select *
 from {{ ref('fact_inventory_snapshot') }}
