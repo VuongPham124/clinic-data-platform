@@ -127,3 +127,31 @@ models:
 
       - name: is_low_stock
         tests: [not_null]
+  - name: gold_slow_moving_items
+    columns:
+      - name: clinic_name
+        tests: [not_null]
+
+      - name: medicine_name
+        tests: [not_null]
+
+      - name: medicine_import_detail_id
+        tests: [not_null, unique]
+
+      - name: expire_date
+        tests: [not_null]
+
+      - name: current_quantity
+        tests: [not_null]
+
+      - name: lot_start_date
+        tests: [not_null]
+
+      - name: days_in_stock
+        tests: [not_null]
+
+      - name: expire_date
+        tests: [not_null]
+
+      - name: is_slow_moving
+        tests: [not_null]
