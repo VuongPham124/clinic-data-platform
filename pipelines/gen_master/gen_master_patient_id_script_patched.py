@@ -122,9 +122,26 @@ def _digits_only(col):
     return F.regexp_replace(col, r"\D", "")
 
 
+def _strip_vietnamese_accents(col):
+    # Normalize Vietnamese accents to ASCII for deterministic master_patient_id.
+    out = F.lower(col)
+    replacements = [
+        (r"[àáạảãăắằẳẵặâấầẩẫậ]", "a"),
+        (r"[èéẹẻẽêếềểễệ]", "e"),
+        (r"[ìíịỉĩ]", "i"),
+        (r"[òóọỏõôốồổỗộơớờởỡợ]", "o"),
+        (r"[ùúụủũưứừửữự]", "u"),
+        (r"[ỳýỵỷỹ]", "y"),
+        (r"đ", "d"),
+    ]
+    for pattern, replacement in replacements:
+        out = F.regexp_replace(out, pattern, replacement)
+    return out
+
+
 def build_master_id_expr(name_col, dob_col, phone_col):
     # name token: last_word + initials of preceding words
-    n = F.lower(_clean_string(name_col))
+    n = _strip_vietnamese_accents(_clean_string(name_col))
     n = F.regexp_replace(n, r"[{}]", "")
     n = F.regexp_replace(n, r"\s+", " ")
     n = F.trim(n)
