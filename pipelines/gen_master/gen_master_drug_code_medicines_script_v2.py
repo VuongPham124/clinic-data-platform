@@ -14,15 +14,15 @@ spark-submit \
   --output-bq-table wata-clinicdataplatform-gcp.master.master_drug_map_v1 \
   --temp-gcs-bucket <YOUR_TEMP_BUCKET>
 
-Note: This script converts Spark DF -> Pandas for rule verification, so keep data volume reasonable.
+Note: This version processes rows by Spark partition via mapInPandas (no full toPandas on driver).
 """
 
 import argparse
-import os
 import re
 import unicodedata
 import pandas as pd
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 from pyspark.sql.types import StructField, StructType, StringType
 
 # Try multiple providers to survive connector/classpath differences across clusters.
@@ -33,15 +33,19 @@ BQ_DATA_SOURCES = [
     "bigquery",
 ]
 
-def load_input_as_pandas(
+def load_input_df(
     spark: SparkSession,
     input_bq_table: str,
     input_csv: str | None,
-    max_input_rows: int,
-) -> pd.DataFrame:
+):
     cols = ["id", "name", "active_element", "concentration", "manufacturer"]
     if input_csv:
-        return pd.read_csv(input_csv, usecols=cols, dtype=str)
+        return (
+            spark.read
+            .option("header", "true")
+            .csv(input_csv)
+            .select(*cols)
+        )
 
     last_error = None
     df_spark = None
@@ -59,47 +63,14 @@ def load_input_as_pandas(
     if df_spark is None:
         raise RuntimeError(f"Cannot read BigQuery table with known providers: {last_error}")
 
-    # Guardrail: toPandas() collects all rows to driver; fail fast for large inputs.
-    row_count = df_spark.count()
-    if row_count > max_input_rows:
-        raise RuntimeError(
-            f"Input too large for driver-side pandas processing: {row_count} rows "
-            f"(max_input_rows={max_input_rows}). "
-            "Reduce input size or rewrite this pipeline with Spark-native transforms."
-        )
-
-    df = df_spark.toPandas()
-    for c in cols:
-        if c in df.columns:
-            df[c] = df[c].astype("string")
-    return df
+    return df_spark
 
 def write_output_to_bigquery(
-    spark: SparkSession,
-    df_out: pd.DataFrame,
+    sdf,
     output_bq_table: str,
     temp_gcs_bucket: str,
     mode: str = "overwrite",
 ) -> None:
-    # Normalize all values to scalar strings/None to avoid Spark schema merge errors
-    # such as StructType vs StringType from mixed pandas object cells.
-    safe_df = df_out.copy()
-
-    def to_nullable_string(v):
-        if v is None:
-            return None
-        try:
-            if pd.isna(v):
-                return None
-        except Exception:
-            pass
-        return str(v)
-
-    for col in safe_df.columns:
-        safe_df[col] = safe_df[col].map(to_nullable_string)
-
-    schema = StructType([StructField(c, StringType(), True) for c in safe_df.columns])
-    sdf = spark.createDataFrame(safe_df, schema=schema)
     last_error = None
     for source in BQ_DATA_SOURCES:
         try:
@@ -122,20 +93,25 @@ def main():
     parser.add_argument("--temp-gcs-bucket", required=True)
     parser.add_argument("--input-csv", default=None)
     parser.add_argument("--write-mode", default="overwrite", choices=["overwrite", "append"])
-    parser.add_argument(
-        "--max-input-rows",
-        type=int,
-        default=int(os.environ.get("MASTER_DRUG_MAX_INPUT_ROWS", "300000")),
-        help="Safety limit for driver-side pandas processing.",
-    )
     args = parser.parse_args()
 
-    spark = SparkSession.builder.appName("master_drug_code_medicines_patch").getOrCreate()
-    df = load_input_as_pandas(
+    spark = (
+        SparkSession.builder
+        .appName("master_drug_code_medicines_patch")
+        .config("spark.sql.adaptive.enabled", "true")
+        .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
+        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .getOrCreate()
+    )
+    df = load_input_df(
         spark=spark,
         input_bq_table=args.input_bq_table,
         input_csv=args.input_csv,
-        max_input_rows=args.max_input_rows,
+    ).select(
+        *[
+            F.col(c).cast("string").alias(c)
+            for c in ["id", "name", "active_element", "concentration", "manufacturer"]
+        ]
     )
 
     # =========================
@@ -575,11 +551,16 @@ def main():
         }
 
     # ---------- Apply ----------
-    out = pd.DataFrame(
-        [build_mathuoc(hcc, hl) for hcc, hl in zip(df["active_element"], df["concentration"])],
-        index=df.index,
-    )
-    df_out = pd.concat([df, out], axis=1)
+    output_schema = StructType([
+        StructField("source_medicine_id", StringType(), True),
+        StructField("name", StringType(), True),
+        StructField("active_element", StringType(), True),
+        StructField("concentration", StringType(), True),
+        StructField("manufacturer", StringType(), True),
+        StructField("mathuoc_new", StringType(), True),
+        StructField("manufacturer_code", StringType(), True),
+        StructField("master_drug_code", StringType(), True),
+    ])
 
 
 
@@ -780,42 +761,59 @@ def main():
         return "".join(out).upper()
 
 
-    df_out["manufacturer_normalized"] = df_out["manufacturer"].apply(normalize_company_name)
-    df_out["manufacturer_code"] = df_out["manufacturer"].apply(company_short_code)
+    def transform_partition(iterator):
+        for pdf in iterator:
+            if pdf.empty:
+                yield pd.DataFrame(columns=[f.name for f in output_schema.fields])
+                continue
 
-    df_out["master_drug_code"] = (
-        df_out["mathuoc_new"].fillna("").str.upper().str.strip()
-        + "__" +
-        df_out["manufacturer_code"].fillna("").str.upper().str.strip()
-    ).str.strip("_")
+            for c in ["id", "name", "active_element", "concentration", "manufacturer"]:
+                if c not in pdf.columns:
+                    pdf[c] = None
+                pdf[c] = pdf[c].astype("string")
 
-    # ---- OUTPUT (patched) ----
-    KEEP_COLS = [
-        "id",
-        "name",
-        "active_element",
-        "concentration",
-        "manufacturer",
-        "mathuoc_new",
-        "manufacturer_code",
-        "master_drug_code",
-    ]
-    for c in KEEP_COLS:
-        if c not in df_out.columns:
-            df_out[c] = None
+            out = pd.DataFrame(
+                [build_mathuoc(hcc, hl) for hcc, hl in zip(pdf["active_element"], pdf["concentration"])],
+                index=pdf.index,
+            )
+            df_out = pd.concat([pdf, out], axis=1)
+            df_out["manufacturer_code"] = df_out["manufacturer"].apply(company_short_code)
+            df_out["master_drug_code"] = (
+                df_out["mathuoc_new"].fillna("").str.upper().str.strip()
+                + "__" +
+                df_out["manufacturer_code"].fillna("").str.upper().str.strip()
+            ).str.strip("_")
 
-    df_final = df_out[KEEP_COLS].copy()
-    df_final = df_final.rename(columns={"id": "source_medicine_id"})
+            keep_cols = [
+                "id",
+                "name",
+                "active_element",
+                "concentration",
+                "manufacturer",
+                "mathuoc_new",
+                "manufacturer_code",
+                "master_drug_code",
+            ]
+            for c in keep_cols:
+                if c not in df_out.columns:
+                    df_out[c] = None
+
+            df_final = df_out[keep_cols].copy().rename(columns={"id": "source_medicine_id"})
+            for c in df_final.columns:
+                df_final[c] = df_final[c].map(lambda v: None if pd.isna(v) else str(v))
+
+            yield df_final
+
+    result_df = df.mapInPandas(transform_partition, schema=output_schema)
 
     write_output_to_bigquery(
-        spark=spark,
-        df_out=df_final,
+        sdf=result_df,
         output_bq_table=args.output_bq_table,
         temp_gcs_bucket=args.temp_gcs_bucket,
         mode=args.write_mode,
     )
 
-    print(f"[OK] Wrote {len(df_final):,} rows to {args.output_bq_table}")
+    print(f"[OK] Wrote mapping rows to {args.output_bq_table}")
 
 if __name__ == "__main__":
     main()
