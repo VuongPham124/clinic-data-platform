@@ -10,6 +10,14 @@ export_f as (
     from {{ source('platinum', 'fact_inventory_export_valid') }}
 ),
 
+import_f as (
+    select
+        clinic_key,
+        lot_key,
+        date_key
+    from {{ source('platinum', 'fact_inventory_import_valid') }}
+),
+
 d as (
     select *
     from {{ source('platinum', 'dim_date') }}
@@ -38,9 +46,9 @@ lot_sold_last_3m as (
     from export_f e
     join d
       on e.date_key = d.date_key
-    where DATE(d.year, d.month, 1)
+    where date(d.year, d.month, 1)
           >= date_trunc(date_sub(current_date, interval 3 month), month)
-      and DATE(d.year, d.month, 1)
+      and date(d.year, d.month, 1)
           < date_trunc(current_date, month)
 ),
 
@@ -48,6 +56,17 @@ current_stock as (
     select *
     from snapshot
     where current_quantity > 0
+),
+
+-- Lấy ngày nhập kho từ fact_inventory_import
+lot_import_date as (
+    select
+        i.clinic_key,
+        i.lot_key,
+        d.date as lot_start_date
+    from import_f i
+    join d
+      on i.date_key = d.date_key
 )
 
 select
@@ -57,21 +76,35 @@ select
 
     -- Thông tin tồn
     s.current_quantity,
-    lot.manufacturing_date as lot_start_date,
-    date_diff(current_date, lot.manufacturing_date, day) as days_in_stock,
+
+    -- Ngày nhập kho thực tế
+    li.lot_start_date,
+
+    -- Số ngày tồn kho tính từ ngày nhập
+    date_diff(current_date, li.lot_start_date, day) as days_in_stock,
+
     lot.expire_date,
+
     case
         when l.lot_key is null then true
         else false
     end as is_slow_moving
 
 from current_stock s
+
 join lot
   on s.lot_key = lot.lot_key
+
 join clinic c
   on s.clinic_key = c.clinic_key
+
 join medicine m
   on s.medicine_key = m.medicine_key
+
+left join lot_import_date li
+  on s.clinic_key = li.clinic_key
+ and s.lot_key = li.lot_key
+
 left join lot_sold_last_3m l
   on s.clinic_key = l.clinic_key
  and s.lot_key = l.lot_key
