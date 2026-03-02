@@ -1,0 +1,40 @@
+steps:
+  - name: "python:3.11-slim"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        set -euo pipefail
+        pip install --no-cache-dir -r streaming_alert/dataflow/requirements.txt
+
+        export RAW_CDC_SUBSCRIPTION="${_RAW_CDC_SUBSCRIPTION}"
+        export ALERT_TOPIC="${_ALERT_TOPIC}"
+        export BOOKING_SPIKE_THRESHOLD="${_BOOKING_SPIKE_THRESHOLD}"
+        export CANCEL_RATIO_THRESHOLD="${_CANCEL_RATIO_THRESHOLD}"
+        export MIN_SAMPLE_FOR_RATIO="${_MIN_SAMPLE_FOR_RATIO}"
+
+        python streaming_alert/dataflow/alert_detector_pipeline.py \
+          --runner DataflowRunner \
+          --project "${PROJECT_ID}" \
+          --region "${_REGION}" \
+          --temp_location "gs://${_TEMP_BUCKET}/dataflow/temp" \
+          --staging_location "gs://${_TEMP_BUCKET}/dataflow/staging" \
+          --job_name "${_JOB_NAME}-$(date +%Y%m%d%H%M%S)" \
+          --service_account_email "${_WORKER_SERVICE_ACCOUNT}" \
+          --experiments=use_runner_v2 \
+          --streaming \
+          --requirements_file streaming_alert/dataflow/requirements.txt \
+          --save_main_session
+
+substitutions:
+  _REGION: "us-central1"
+  _TEMP_BUCKET: "replace-me-dataflow-temp-bucket"
+  _JOB_NAME: "stream-alert-detector"
+  _RAW_CDC_SUBSCRIPTION: "projects/wata-clinicdataplatform-gcp/subscriptions/raw-cdc-events-sub"
+  _ALERT_TOPIC: "projects/wata-clinicdataplatform-gcp/topics/business-alerts"
+  _WORKER_SERVICE_ACCOUNT: "stream-alert-dataflow@wata-clinicdataplatform-gcp.iam.gserviceaccount.com"
+  _BOOKING_SPIKE_THRESHOLD: "1"
+  _CANCEL_RATIO_THRESHOLD: "1"
+  _MIN_SAMPLE_FOR_RATIO: "1"
+
+timeout: "1800s"

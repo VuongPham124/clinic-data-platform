@@ -1,0 +1,20 @@
+﻿# Debezium Server (Postgres -> Pub/Sub)
+
+debezium.sink.type=pubsub
+
+debezium.source.connector.class=io.debezium.connector.postgresql.PostgresConnector
+debezium.source.plugin.name=pgoutput
+debezium.source.slot.name=datastream_slot_streamalert
+debezium.source.publication.autocreate.mode=filtered
+debezium.source.table.include.list=public.clinic_bookings
+
+# Fill these
+debezium.source.database.hostname=
+debezium.source.database.port=
+debezium.source.database.user=
+debezium.source.database.password=
+debezium.source.database.dbname=
+
+# Pub/Sub
+debezium.sink.pubsub.project.id=
+debezium.sink.pubsub.topic.id=

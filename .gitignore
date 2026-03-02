@@ -212,3 +212,9 @@ dbt/logs/
 dbt/target/
 dbt/dbt_internal_packages/
 dbt/dbt_packages/
+
+# streaming_alert local secrets/runtime
+streaming_alert/debezium/application.properties
+streaming_alert/debezium/gcp-sa.json*
+streaming_alert/debezium/**/*.json
+streaming_alert/debezium/data/
