@@ -18,7 +18,7 @@ import_f as (
     from {{ source('platinum', 'fact_inventory_import_valid') }}
 ),
 
-d as (
+d_date as (
     select *
     from {{ source('platinum', 'dim_date') }}
 ),
@@ -44,11 +44,11 @@ lot_sold_last_3m as (
         e.clinic_key,
         e.lot_key
     from export_f e
-    join d
-      on e.date_key = d.date_key
-    where date(d.year, d.month, 1)
+    join d_date
+      on e.date_key = d_date.date_key
+    where date(d_date.year, d_date.month, 1)
           >= date_trunc(date_sub(current_date, interval 3 month), month)
-      and date(d.year, d.month, 1)
+      and date(d_date.year, d_date.month, 1)
           < date_trunc(current_date, month)
 ),
 
@@ -63,10 +63,10 @@ lot_import_date as (
     select
         i.clinic_key,
         i.lot_key,
-        d.date as lot_start_date
+        d_date.full_date as lot_start_date
     from import_f i
-    join d
-      on i.date_key = d.date_key
+    join d_date
+      on i.date_key = d_date.date_key
 )
 
 select
