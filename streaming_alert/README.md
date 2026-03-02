@@ -104,11 +104,17 @@ gcloud run services describe stream-alert-orchestrator \
 Tao push sub:
 
 ```bash
+gcloud pubsub subscriptions delete business-alerts-push-sub --project=wata-clinicdataplatform-gcp
+
 gcloud pubsub subscriptions create business-alerts-push-sub \
   --project=wata-clinicdataplatform-gcp \
   --topic=business-alerts \
-  --push-endpoint=https://<cloud-run-url>/pubsub/push
+  --push-endpoint=https://<cloud-run-url>/pubsub/push \
+  --push-auth-service-account=streamalert-pubsub-inv@wata-clinicdataplatform-gcp.iam.gserviceaccount.com \
+  --push-auth-token-audience=https://<cloud-run-url>/pubsub/push
 ```
+
+Luu y: service Cloud Run duoc deploy voi `--no-allow-unauthenticated` va endpoint `/pubsub/push` bat buoc bearer token hop le.
 
 ## 4) Start Dataflow (khong can cai apache_beam tren local)
 
