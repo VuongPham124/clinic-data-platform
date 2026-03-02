@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='view') }}
 
 -- 1️⃣ Lấy total từ import detail
 with imports as (

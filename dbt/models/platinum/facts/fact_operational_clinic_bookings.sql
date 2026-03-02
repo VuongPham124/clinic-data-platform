@@ -116,7 +116,7 @@
 -- left join {{ ref('dim_clinic_rooms') }} as r
 --   on r.clinic_key = joined.clinic_key
 --  and r.doctor_key = joined.doctor_key
-{{ config(materialized='table') }}
+{{ config(materialized='view') }}
 
 with b as (
   select

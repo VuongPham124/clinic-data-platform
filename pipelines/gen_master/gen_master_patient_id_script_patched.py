@@ -208,7 +208,7 @@ def main():
 
     clinic_patients_enriched = (
         clinic_patients_df.alias("cp")
-        .join(F.broadcast(clinic_users_sel).alias("cu"), F.col("cp.user_id") == F.col("cu.clinic_user_id"), "left")
+        .join(clinic_users_sel.alias("cu"), F.col("cp.user_id") == F.col("cu.clinic_user_id"), "left")
         .withColumn(
             "master_patient_id",
             build_master_id_expr(
@@ -228,7 +228,7 @@ def main():
 
     patients_enriched = (
         patients_df.alias("p")
-        .join(F.broadcast(users_sel).alias("u"), F.col("p.user_id") == F.col("u.user_id_right"), "left")
+        .join(users_sel.alias("u"), F.col("p.user_id") == F.col("u.user_id_right"), "left")
         .withColumn(
             "master_patient_id",
             build_master_id_expr(

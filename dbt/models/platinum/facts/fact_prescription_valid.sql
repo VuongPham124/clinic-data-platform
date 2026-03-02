@@ -10,7 +10,7 @@
 --   and price_included_vat is not null
 
 
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 select *
 from {{ ref('fact_prescription') }}
