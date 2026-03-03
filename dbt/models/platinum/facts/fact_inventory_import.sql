@@ -23,7 +23,7 @@ joined as (
         m.medicine_key,
         l.lot_key,
         s.quantity_imported,
-        s.quantity_imported * s.import_price as import_value
+        s.quantity_imported * s.import_price as initial_import_value
 
     from src s
 
