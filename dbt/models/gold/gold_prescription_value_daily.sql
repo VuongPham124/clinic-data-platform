@@ -1,8 +1,26 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key=['clinic_key', 'doctor_key', 'room_id', 'date_key'],
+    partition_by={"field": "date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 1}},
+    cluster_by=['clinic_key', 'doctor_key']
+) }}
 
 with f as (
-  select *
+  select
+    clinic_key,
+    doctor_key,
+    room_id,
+    prescription_date_key,
+    price_included_vat,
+    price
   from {{ source('platinum', 'fact_prescription_valid') }}
+  {% if is_incremental() %}
+    where prescription_date_key >= (
+      select ifnull(max(date_key) - 31, 20000101)
+      from {{ this }}
+    )
+  {% endif %}
 ),
 
 name_cli as (

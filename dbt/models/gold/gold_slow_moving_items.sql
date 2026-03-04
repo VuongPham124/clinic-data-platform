@@ -1,12 +1,19 @@
 {{ config(materialized='table') }}
 
 with snapshot as (
-    select *
+    select
+      clinic_key,
+      medicine_key,
+      lot_key,
+      current_quantity
     from {{ source('platinum', 'fact_inventory_snapshot_valid') }}
 ),
 
 export_f as (
-    select *
+    select
+      clinic_key,
+      lot_key,
+      date_key
     from {{ source('platinum', 'fact_inventory_export_valid') }}
 ),
 
@@ -19,12 +26,19 @@ import_f as (
 ),
 
 d_date as (
-    select *
+    select
+      date_key,
+      year,
+      month,
+      full_date
     from {{ source('platinum', 'dim_date') }}
 ),
 
 lot as (
-    select *
+    select
+      lot_key,
+      medicine_import_detail_id,
+      expire_date
     from {{ source('platinum', 'dim_medicines_lot') }}
 ),
 

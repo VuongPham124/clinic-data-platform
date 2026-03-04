@@ -41,7 +41,12 @@
 -- where is_valid_online_revenue = true
 
 
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key=['booking_id', 'source_type'],
+    cluster_by=['source_type', 'doctor_key']
+) }}
 
 with d as (
   select
@@ -87,6 +92,12 @@ offline as (
   join name_cli nc
     on nc.clinic_key = f.clinic_key
   where f.is_revenue_eligible = true
+  {% if is_incremental() %}
+    and f.from_date_key >= (
+      select ifnull(max(cast(format_date('%Y%m%d', booking_date) as int64)) - 31, 20000101)
+      from {{ this }}
+    )
+  {% endif %}
 ),
 
 online as (
@@ -113,6 +124,12 @@ online as (
   join d
     on d.date_key = o.booking_date_key
   where o.is_valid_online_revenue = true
+  {% if is_incremental() %}
+    and o.booking_date_key >= (
+      select ifnull(max(cast(format_date('%Y%m%d', booking_date) as int64)) - 31, 20000101)
+      from {{ this }}
+    )
+  {% endif %}
 )
 
 select * from offline

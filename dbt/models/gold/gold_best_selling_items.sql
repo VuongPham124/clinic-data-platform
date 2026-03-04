@@ -1,12 +1,24 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key=['clinic_name', 'medicine_name', 'year', 'month'],
+    cluster_by=['year', 'month']
+) }}
 
 with f as (
-    select *
+    select
+      clinic_key,
+      medicine_key,
+      date_key,
+      quantity_exported
     from {{ source('platinum', 'fact_inventory_export_valid') }}
 ),
 
 d as (
-    select *
+    select
+      date_key,
+      year,
+      month
     from {{ source('platinum', 'dim_date') }}
 ),
 
@@ -30,6 +42,12 @@ monthly_sales as (
     from f
     join d
       on f.date_key = d.date_key
+    {% if is_incremental() %}
+      where cast(concat(cast(d.year as string), lpad(cast(d.month as string), 2, '0')) as int64) >= (
+        select ifnull(max(year * 100 + month) - 1, 200001)
+        from {{ this }}
+      )
+    {% endif %}
     group by 1,2,3,4
 )
 

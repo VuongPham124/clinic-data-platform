@@ -1,12 +1,20 @@
 {{ config(materialized='table') }}
 
 with f as (
-    select *
+    select
+      clinic_key,
+      medicine_key,
+      lot_key,
+      current_quantity,
+      days_to_expire
     from {{ source('platinum', 'fact_inventory_snapshot_valid') }}
 ),
 
 lot as (
-    select *
+    select
+      lot_key,
+      medicine_import_detail_id,
+      expire_date
     from {{ source('platinum', 'dim_medicines_lot') }}
 ),
 
