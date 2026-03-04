@@ -1,4 +1,4 @@
-gold_visits_doctor_monthly{{ config(materialized='table') }}
+{{ config(materialized='table') }}
 
 with f as (
   select *
