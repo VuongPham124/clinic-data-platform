@@ -2,7 +2,7 @@
     materialized='incremental',
     incremental_strategy='merge',
     unique_key='id',
-    partition_by={"field": "week_start_date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 7}},
+    partition_by={"field": "week_start_date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 100}},
     cluster_by=['clinic_key']
 ) }}
 
