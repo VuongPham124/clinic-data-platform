@@ -20,6 +20,7 @@ sources:
       - name: fact_health_record_valid
       - name: fact_disease_record_valid
       - name: rev_fact_bookings
+      - name: rev_dim_doctors
 
 
 

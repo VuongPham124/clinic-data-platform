@@ -1,43 +1,38 @@
--- {{ config(materialized='table') }}
-
--- with f as (
---   select *
---   from {{ source('platinum', 'fact_prescription_valid') }}
--- )
-
--- select
---   clinic_key,
---   doctor_key,
---   room_id,
---   prescription_date_key as date_key,
-
---   count(1) as prescription_count,
---   sum(price_included_vat) as total_value,
---   avg(price_included_vat) as avg_price_included_vat
-
--- from f
--- group by 1,2,3,4
-
 {{ config(materialized='table') }}
 
 with f as (
   select *
   from {{ source('platinum', 'fact_prescription_valid') }}
+),
+
+name_cli as (
+  select clinic_key, clinic_name
+  from {{ source('platinum', 'dim_clinics') }}
+),
+name_doc as (
+  select doctor_key, doctor_name
+  from {{ source('platinum', 'dim_clinic_doctors') }}
 )
 
 select
-  clinic_key,
-  doctor_key,
-  room_id,
-  prescription_date_key as date_key,
+  f.clinic_key,
+  nc.clinic_name,
+  f.doctor_key,
+  nd.doctor_name,
+  f.room_id,
+  f.prescription_date_key as date_key,
 
   count(1) as prescription_count,
 
   -- total_value: prefer price_included_vat, else price
-  sum(coalesce(price_included_vat, price)) as total_value,
+  sum(coalesce(f.price_included_vat, f.price)) as total_value,
 
   -- avg: average on the same chosen value
-  avg(coalesce(price_included_vat, price)) as avg_price_effective
+  avg(coalesce(f.price_included_vat, f.price)) as avg_price_effective
 
 from f
-group by 1,2,3,4
+join name_cli nc
+  on nc.clinic_key = f.clinic_key
+join name_doc nd
+  on nd.doctor_key = f.doctor_key
+group by 1,2,3,4,5,6

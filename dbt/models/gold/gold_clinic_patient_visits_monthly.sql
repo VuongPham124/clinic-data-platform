@@ -37,9 +37,15 @@ first_month as (
   group by 1,2
 ),
 
+name_cli as (
+  select clinic_key, clinic_name
+  from {{ source('platinum', 'dim_clinics') }}
+),
+
 monthly as (
   select
     v.clinic_key,
+    nc.clinic_name,
     v.month_start_date_key,
     countif(fm.first_visit_month_start_date_key = v.month_start_date_key) as new_visits,
     countif(fm.first_visit_month_start_date_key < v.month_start_date_key) as returning_visits
@@ -47,7 +53,9 @@ monthly as (
   join first_month fm
     on fm.clinic_key = v.clinic_key
    and fm.patient_key = v.patient_key
-  group by 1,2
+  join name_cli nc
+    on nc.clinic_key = v.clinic_key
+  group by 1,2,3
 )
 
 select
@@ -57,6 +65,7 @@ select
   ))) as id,
 
   clinic_key,
+  clinic_name,
   month_start_date_key,
   new_visits,
   returning_visits,

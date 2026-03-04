@@ -50,12 +50,18 @@ with d as (
   from {{ source('platinum', 'dim_date') }}
 ),
 
+name_cli as (
+  select clinic_key, clinic_name
+  from {{ source('platinum', 'dim_clinics') }}
+),
+
 offline as (
   select
     f.booking_id,
     'OFFLINE' as source_type,
 
     f.clinic_key,
+    nc.clinic_name,
     f.doctor_key,
     f.patient_key,
 
@@ -78,6 +84,8 @@ offline as (
   from {{ source('platinum', 'fact_operational_clinic_bookings_valid') }} f
   join d
     on d.date_key = f.from_date_key
+  join name_cli nc
+    on nc.clinic_key = f.clinic_key
   where f.is_revenue_eligible = true
 ),
 
@@ -88,6 +96,7 @@ online as (
 
     -- online có thể không có clinic_key, để null
     cast(null as int64) as clinic_key,
+    cast(null as string) as clinic_name,
     o.doctor_key,
     o.patient_key,
 
