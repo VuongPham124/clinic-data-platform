@@ -41,7 +41,13 @@
 --  and r.doctor_key = base.doctor_key
 -- where base.prescription_id is not null
 
-{{ config(materialized='view') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key='prescription_id',
+    partition_by={"field": "prescription_date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 1}},
+    cluster_by=['clinic_key', 'doctor_key']
+) }}
 
 with p as (
   select
@@ -54,6 +60,12 @@ with p as (
     cast(price_included_vat as numeric) as price_included_vat,
     cast(vat_amount as numeric) as vat_amount
   from {{ source('silver', 'prescriptions') }}
+  {% if is_incremental() %}
+    where safe_cast(created_at as timestamp) >= (
+      select timestamp(date_sub(parse_date('%Y%m%d', cast(ifnull(max(prescription_date_key), 20000101) as string)), interval 31 day))
+      from {{ this }}
+    )
+  {% endif %}
 ),
 
 base as (

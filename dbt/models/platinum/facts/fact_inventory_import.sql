@@ -1,4 +1,10 @@
-{{ config(materialized='view') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key='import_fact_id',
+    partition_by={"field": "date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 1}},
+    cluster_by=['clinic_key', 'medicine_key']
+) }}
 
 with src as (
 
@@ -11,6 +17,12 @@ with src as (
         safe_cast(import_price as numeric) as import_price
     from {{ source('silver', 'medicine_import_details') }}
     where lower(`status`) = 'active'
+    {% if is_incremental() %}
+      and safe_cast(created_at as timestamp) >= (
+        select timestamp(date_sub(parse_date('%Y%m%d', cast(ifnull(max(date_key), 20000101) as string)), interval 31 day))
+        from {{ this }}
+      )
+    {% endif %}
 
 ),
 

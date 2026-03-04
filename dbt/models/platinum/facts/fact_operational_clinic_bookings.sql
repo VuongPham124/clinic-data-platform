@@ -116,7 +116,13 @@
 -- left join {{ ref('dim_clinic_rooms') }} as r
 --   on r.clinic_key = joined.clinic_key
 --  and r.doctor_key = joined.doctor_key
-{{ config(materialized='view') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key='booking_id',
+    partition_by={"field": "created_date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 1}},
+    cluster_by=['clinic_key', 'doctor_key', 'patient_key']
+) }}
 
 with b as (
   select
@@ -141,6 +147,12 @@ with b as (
     cast(metadata as string) as metadata
 
   from {{ source('silver', 'clinic_bookings') }}
+  {% if is_incremental() %}
+    where safe_cast(created_at as timestamp) >= (
+      select timestamp(date_sub(parse_date('%Y%m%d', cast(ifnull(max(created_date_key), 20000101) as string)), interval 31 day))
+      from {{ this }}
+    )
+  {% endif %}
 ),
 rev as (
   select

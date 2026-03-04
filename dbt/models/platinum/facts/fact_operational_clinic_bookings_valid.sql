@@ -19,7 +19,13 @@
 --   or consult_duration_sec is null
 
 
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key='booking_id',
+    partition_by={"field": "created_date_key", "data_type": "int64", "range": {"start": 20000101, "end": 21000101, "interval": 1}},
+    cluster_by=['clinic_key', 'doctor_key', 'patient_key']
+) }}
 
 select *
 from {{ ref('fact_operational_clinic_bookings') }}
@@ -33,3 +39,9 @@ where
     is_completed = false
     or (confirm_duration_sec is not null and consult_duration_sec is not null)
   )
+{% if is_incremental() %}
+  and created_date_key >= (
+    select ifnull(max(created_date_key) - 31, 20000101)
+    from {{ this }}
+  )
+{% endif %}
