@@ -8,6 +8,7 @@ with imports as (
         cast(clinic_id as int64) as clinic_id,
         cast(medicine_id as int64) as medicine_id,
         cast(total as int64) as quantity_imported,
+        safe_cast(import_price as numeric) as import_price,
         date(expire_date) as expire_date
     from {{ source('silver', 'medicine_import_details') }}
     where lower(`status`) = 'active'
@@ -36,8 +37,8 @@ calculated as (
         i.medicine_id,
         i.expire_date,
         i.quantity_imported,
+        i.import_price,
         coalesce(e.total_exported, 0) as total_exported,
-
         i.quantity_imported - coalesce(e.total_exported, 0) as current_quantity
 
     from imports i
@@ -54,6 +55,7 @@ joined as (
         dm.medicine_key,
         dl.lot_key,
         c.current_quantity,
+        c.current_quantity * c.import_price as current_inventory_value,
         date_diff(c.expire_date, current_date(), day) as days_to_expire
 
     from calculated c
@@ -74,6 +76,7 @@ select
     medicine_key,
     lot_key,
     current_quantity,
+    current_inventory_value,
     days_to_expire
 from joined
 where current_quantity > 0
