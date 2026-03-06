@@ -21,7 +21,8 @@ with src as (
   select
     cast(id as int64) as patient_id,
     cast(user_id as int64) as patient_user_id,
-    cast(clinic_id as int64) as clinic_patient_id
+    cast(clinic_id as int64) as clinic_patient_id,
+    permission
   from {{ source('silver', 'clinic_patients') }}
 ),
 dedup as (
@@ -37,5 +38,6 @@ select
   abs(farm_fingerprint(cast(patient_id as string))) as patient_key,
   patient_id,
   patient_user_id,
-  clinic_patient_id
+  clinic_patient_id,
+  permission
 from dedup
