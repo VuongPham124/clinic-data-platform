@@ -76,7 +76,7 @@ with DAG(
         bash_command=(
             DBT_BASH_PREFIX
             + f"""
-            ${{DBT_CMD}} build --target platinum --select dim_clinic_patients_test {COMMON_DBT_FLAGS}
+            ${{DBT_CMD}} build --full-refresh --target platinum --select dim_clinic_patients_test {COMMON_DBT_FLAGS}
             """
         ),
     )
