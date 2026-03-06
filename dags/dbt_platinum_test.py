@@ -6,7 +6,7 @@ from airflow.operators.bash import BashOperator
 VN_TZ = pendulum.timezone("Asia/Ho_Chi_Minh")
 
 with DAG(
-    dag_id="dbt_platinum_build_test",
+    dag_id="dbt_platinum_build_test_1table",
     start_date=pendulum.datetime(2026, 2, 11, tz=VN_TZ),
     schedule=None,  # set cron here if you want scheduled runs
     catchup=False,
