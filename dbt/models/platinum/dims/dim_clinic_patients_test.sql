@@ -29,7 +29,8 @@ dedup as (
   select
     patient_id,
     any_value(patient_user_id) as patient_user_id,
-    any_value(clinic_patient_id) as clinic_patient_id
+    any_value(clinic_patient_id) as clinic_patient_id,
+    permission
   from src
   where patient_id is not null
   group by patient_id
