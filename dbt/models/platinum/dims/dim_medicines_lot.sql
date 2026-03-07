@@ -4,8 +4,16 @@ with src as (
   select
     cast(id as int64) as medicine_import_detail_id,
     cast(lot_number as string) as lot_number,
-    date(manufacturing_date) as manufacturing_date,
-    date(expire_date) as expire_date,
+    coalesce(
+      safe.parse_date('%d/%m/%Y', cast(manufacturing_date as string)),
+      safe.parse_date('%Y-%m-%d', regexp_extract(cast(manufacturing_date as string), r'(\d{4}-\d{2}-\d{2})')),
+      safe_cast(manufacturing_date as date)
+    ) as manufacturing_date,
+    coalesce(
+      safe.parse_date('%d/%m/%Y', cast(expire_date as string)),
+      safe.parse_date('%Y-%m-%d', regexp_extract(cast(expire_date as string), r'(\d{4}-\d{2}-\d{2})')),
+      safe_cast(expire_date as date)
+    ) as expire_date,
     cast(import_price as numeric) as import_price,
     cast(`status` as string) as lot_status
   from {{ source('silver', 'medicine_import_details') }}
