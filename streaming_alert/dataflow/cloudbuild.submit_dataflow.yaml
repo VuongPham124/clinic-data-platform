@@ -17,6 +17,8 @@ steps:
           --runner DataflowRunner \
           --project "${PROJECT_ID}" \
           --region "${_REGION}" \
+          --worker_zone "${_WORKER_ZONE}" \
+          --worker_machine_type "${_WORKER_MACHINE_TYPE}" \
           --temp_location "gs://${_TEMP_BUCKET}/dataflow/temp" \
           --staging_location "gs://${_TEMP_BUCKET}/dataflow/staging" \
           --job_name "${_JOB_NAME}-$(date +%Y%m%d%H%M%S)" \
@@ -33,8 +35,10 @@ substitutions:
   _RAW_CDC_SUBSCRIPTION: "projects/wata-clinicdataplatform-gcp/subscriptions/raw-cdc-events-sub"
   _ALERT_TOPIC: "projects/wata-clinicdataplatform-gcp/topics/business-alerts"
   _WORKER_SERVICE_ACCOUNT: "stream-alert-dataflow@wata-clinicdataplatform-gcp.iam.gserviceaccount.com"
-  _BOOKING_SPIKE_THRESHOLD: "1"
-  _CANCEL_RATIO_THRESHOLD: "1"
-  _MIN_SAMPLE_FOR_RATIO: "1"
+  _WORKER_ZONE: "us-central1-f"
+  _WORKER_MACHINE_TYPE: "e2-standard-2"
+  _BOOKING_SPIKE_THRESHOLD: "120"
+  _CANCEL_RATIO_THRESHOLD: "0.40"
+  _MIN_SAMPLE_FOR_RATIO: "20"
 
 timeout: "1800s"

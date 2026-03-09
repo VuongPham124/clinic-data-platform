@@ -5,6 +5,8 @@ param(
     [string]$JobName = "stream-alert-detector",
     [string]$RawSubscription = "",
     [string]$AlertTopic = "",
+    [string]$WorkerZone = "us-central1-f",
+    [string]$WorkerMachineType = "e2-standard-2",
     [int]$BookingSpikeThreshold = 120,
     [double]$CancelRatioThreshold = 0.40,
     [int]$MinSampleForRatio = 20
@@ -44,6 +46,8 @@ python streaming_alert/dataflow/alert_detector_pipeline.py `
   --runner DataflowRunner `
   --project $ProjectId `
   --region $Region `
+  --worker_zone $WorkerZone `
+  --worker_machine_type $WorkerMachineType `
   --temp_location "gs://$TempBucket/dataflow/temp" `
   --staging_location "gs://$TempBucket/dataflow/staging" `
   --job_name $fullJobName `

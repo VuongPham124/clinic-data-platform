@@ -2,15 +2,44 @@
 
 Realtime alert flow (muc tieu <= 1 phut) cho CDC bang `public.clinic_bookings`.
 
-## Kien truc
+## Kien truc va luong xu ly
 
-- Postgres CDC (Debezium) -> Pub/Sub `raw-cdc-events`
-- Dataflow Streaming detector -> Pub/Sub `business-alerts`
-- Cloud Run Orchestrator:
-  - dedup + cooldown
-  - ghi state vao Firestore (`alert_state`)
-  - ghi history vao BigQuery (`ops_monitor.alert_history`)
-  - gui notification (webhook + email SMTP)
+```text
+Postgres (self-host)
+  -> Debezium (CDC slot: datastream_slot_streamalert, table: public.clinic_bookings)
+  -> Pub/Sub topic: raw-cdc-events
+  -> Dataflow Streaming detector (window 1 phut + rules spike/cancel ratio)
+  -> Pub/Sub topic: business-alerts
+  -> Pub/Sub push subscription (OIDC) -> Cloud Run /pubsub/push
+  -> Orchestrator
+       - dedup + cooldown theo alert_key
+       - ghi state hien tai vao Firestore: alert_state
+       - ghi lich su bat bien vao BigQuery: ops_monitor.alert_history
+       - gui notification: webhook va/hoac email SMTP
+```
+
+### Vai tro tung thanh phan
+
+- **Debezium**  
+  Doc WAL logical decoding tu Postgres, chi stream thay doi moi (khong snapshot cu), va dua su kien CDC sang `raw-cdc-events`.
+
+- **Dataflow Streaming detector**  
+  Tieu thu `raw-cdc-events`, tinh toan theo cua so 1 phut, ap dung rule detect (booking spike, cancellation ratio spike), va phat sinh `alert_event` sang `business-alerts`.
+
+- **Pub/Sub business-alerts (push)**  
+  Day `alert_event` den Cloud Run endpoint `/pubsub/push` bang OIDC token (service account invoker).
+
+- **Cloud Run Orchestrator**  
+  Xu ly su kien alert theo transaction:
+  1) doc/update state atomically trong Firestore de tranh race condition  
+  2) quyet dinh co emit hay bi cooldown  
+  3) ghi BigQuery history de audit/truy vet  
+  4) neu emitted=true thi gui webhook/email
+
+### Du lieu trong Firestore vs BigQuery
+
+- **Firestore `alert_state`**: current state theo `alert_key` (last_seen_at, last_sent_at, cooldown_seconds, payload moi nhat).  
+- **BigQuery `ops_monitor.alert_history`**: immutable event log (alert_id, alert_key, severity, payload_json, emitted, created_at) phuc vu audit va bao cao.
 
 ## Cau truc thu muc
 
@@ -123,12 +152,16 @@ powershell -ExecutionPolicy Bypass -File streaming_alert/scripts/submit_dataflow
   -ProjectId wata-clinicdataplatform-gcp `
   -TempBucket <your-dataflow-temp-bucket> `
   -Region us-central1 `
+  -WorkerZone us-central1-f `
+  -WorkerMachineType e2-standard-2 `
   -RawSubscription projects/wata-clinicdataplatform-gcp/subscriptions/raw-cdc-events-sub `
   -AlertTopic projects/wata-clinicdataplatform-gcp/topics/business-alerts `
   -BookingSpikeThreshold 1 `
   -CancelRatioThreshold 1 `
   -MinSampleForRatio 1
 ```
+
+Neu gap loi `ZONE_RESOURCE_POOL_EXHAUSTED` o mot zone (vi du `us-central1-c`), doi `-WorkerZone` sang zone khac trong cung region (`us-central1-a`, `us-central1-b`, `us-central1-f`) va submit lai.
 
 ## 5) Config va run Debezium local Docker
 

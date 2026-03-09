@@ -6,7 +6,7 @@ param(
     [string]$Image = "orchestrator",
     [string]$FirestoreCollection = "alert_state",
     [string]$BqTableFqn = "",
-    [int]$CooldownSeconds = 900,
+    [int]$CooldownSeconds = 120,
     [string]$NotifyWebhookUrl = "",
     [string]$EmailEnabled = "false",
     [string]$EmailProvider = "smtp",
