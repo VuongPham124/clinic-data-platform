@@ -85,13 +85,31 @@ base as (
     on dc.admin_user_id = p.clinic_id
   left join {{ ref('dim_clinic_doctors') }} as dd
     on dd.clinic_doctor_id = p.doctor_id
+),
+rooms as (
+  select
+    clinic_key,
+    doctor_key,
+    room_id
+  from (
+    select
+      clinic_key,
+      doctor_key,
+      room_id,
+      row_number() over (
+        partition by clinic_key, doctor_key
+        order by room_id
+      ) as rn
+    from {{ ref('dim_clinic_rooms') }}
+  )
+  where rn = 1
 )
 
 select
   base.*,
   r.room_id
 from base
-left join {{ ref('dim_clinic_rooms') }} as r
+left join rooms as r
   on r.clinic_key = base.clinic_key
  and r.doctor_key = base.doctor_key
 where base.prescription_id is not null

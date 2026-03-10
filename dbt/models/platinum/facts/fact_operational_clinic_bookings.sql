@@ -237,12 +237,30 @@ rev as (
   left join {{ ref('dim_clinic_patients') }} as dp
     on dp.patient_user_id = rev.patient_id and dp.clinic_patient_id=rev.clinic_id
   where booking_id is not null
+),
+rooms as (
+  select
+    clinic_key,
+    doctor_key,
+    room_id
+  from (
+    select
+      clinic_key,
+      doctor_key,
+      room_id,
+      row_number() over (
+        partition by clinic_key, doctor_key
+        order by room_id
+      ) as rn
+    from {{ ref('dim_clinic_rooms') }}
+  )
+  where rn = 1
 )
 
 select
   joined.*,
   r.room_id
 from joined
-left join {{ ref('dim_clinic_rooms') }} as r
+left join rooms as r
   on r.clinic_key = joined.clinic_key
  and r.doctor_key = joined.doctor_key

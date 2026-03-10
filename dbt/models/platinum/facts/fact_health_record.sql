@@ -1,12 +1,27 @@
 {{ config(materialized='view') }}
 
-with hr as (
+with hr_raw as (
   select
     cast(id as int64) as health_record_id,
     cast(clinic_id as int64) as clinic_id,
     safe_cast(created_at as timestamp) as record_ts,
     cast(patient_age as int64) as patient_age
   from {{ source('silver', 'health_records') }}
+),
+
+hr as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (
+        partition by health_record_id
+        order by record_ts desc
+      ) as rn
+    from hr_raw
+    where health_record_id is not null
+  )
+  where rn = 1
 ),
 
 base as (
