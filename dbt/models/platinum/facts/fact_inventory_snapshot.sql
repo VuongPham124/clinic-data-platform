@@ -1,6 +1,5 @@
 {{ config(materialized='view') }}
 
--- 1️⃣ Lấy total từ import detail
 with imports as (
 
     select
@@ -15,7 +14,6 @@ with imports as (
 
 ),
 
--- 2️⃣ Tổng số lượng đã export
 exports as (
 
     select
@@ -28,7 +26,6 @@ exports as (
 
 ),
 
--- 3️⃣ Tính current_quantity
 calculated as (
 
     select
@@ -46,7 +43,25 @@ calculated as (
         on i.medicine_import_detail_id = e.medicine_import_detail_id
 ),
 
--- 4️⃣ Join dim
+lots as (
+
+    select
+        medicine_import_detail_id,
+        lot_key
+    from (
+        select
+            medicine_import_detail_id,
+            lot_key,
+            row_number() over (
+                partition by medicine_import_detail_id
+                order by lot_key
+            ) as rn
+        from {{ ref('dim_medicines_lot') }}
+        where medicine_import_detail_id is not null
+    )
+    where rn = 1
+),
+
 joined as (
 
     select
@@ -66,8 +81,23 @@ joined as (
     left join {{ ref('dim_medicines') }} as dm
         on dm.medicine_id = c.medicine_id
 
-    left join {{ ref('dim_medicines_lot') }} as dl
+    left join lots as dl
         on dl.medicine_import_detail_id = c.medicine_import_detail_id
+),
+
+deduped as (
+
+    select * except(rn)
+    from (
+        select
+            *,
+            row_number() over (
+                partition by medicine_import_detail_id
+                order by lot_key desc
+            ) as rn
+        from joined
+    )
+    where rn = 1
 )
 
 select
@@ -78,5 +108,5 @@ select
     current_quantity,
     current_inventory_value,
     days_to_expire
-from joined
+from deduped
 where current_quantity > 0
