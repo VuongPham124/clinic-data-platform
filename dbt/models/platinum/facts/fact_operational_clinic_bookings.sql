@@ -124,7 +124,7 @@
     cluster_by=['clinic_key', 'doctor_key', 'patient_key']
 ) }}
 
-with b as (
+with b_raw as (
   select
     cast(id as int64) as booking_id,
     cast(clinic_id as int64) as clinic_id,
@@ -153,6 +153,20 @@ with b as (
       from {{ this }}
     )
   {% endif %}
+),
+b as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (
+        partition by booking_id
+        order by created_ts desc, from_ts desc
+      ) as rn
+    from b_raw
+    where booking_id is not null
+  )
+  where rn = 1
 ),
 rev as (
   select
@@ -255,12 +269,30 @@ rooms as (
     from {{ ref('dim_clinic_rooms') }}
   )
   where rn = 1
+),
+final as (
+  select
+    joined.*,
+    r.room_id
+  from joined
+  left join rooms as r
+    on r.clinic_key = joined.clinic_key
+   and r.doctor_key = joined.doctor_key
+),
+deduped as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (
+        partition by booking_id
+        order by created_date_key desc, from_date_key desc, room_id desc
+      ) as rn
+    from final
+  )
+  where rn = 1
 )
 
 select
-  joined.*,
-  r.room_id
-from joined
-left join rooms as r
-  on r.clinic_key = joined.clinic_key
- and r.doctor_key = joined.doctor_key
+  *
+from deduped

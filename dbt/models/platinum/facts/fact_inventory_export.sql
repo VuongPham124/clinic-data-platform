@@ -6,7 +6,7 @@
     cluster_by=['clinic_key', 'medicine_key']
 ) }}
 
-with pmd as (
+with pmd_raw as (
 
     select
         cast(id as int64) as prescription_medicine_detail_id,
@@ -22,6 +22,21 @@ with pmd as (
         from {{ this }}
       )
     {% endif %}
+
+),
+pmd as (
+    select * except(rn)
+    from (
+        select
+            *,
+            row_number() over (
+                partition by prescription_medicine_detail_id
+                order by created_ts desc
+            ) as rn
+        from pmd_raw
+        where prescription_medicine_detail_id is not null
+    )
+    where rn = 1
 
 ),
 
@@ -49,6 +64,26 @@ base as (
 
 ),
 
+lots as (
+
+    select
+        medicine_import_detail_id,
+        lot_key
+    from (
+        select
+            medicine_import_detail_id,
+            lot_key,
+            row_number() over (
+                partition by medicine_import_detail_id
+                order by lot_key
+            ) as rn
+        from {{ ref('dim_medicines_lot') }}
+        where medicine_import_detail_id is not null
+    )
+    where rn = 1
+
+),
+
 joined as (
 
     select
@@ -72,8 +107,22 @@ joined as (
     left join {{ ref('dim_medicines') }} m
         on m.medicine_id = b.medicine_id
 
-    left join {{ ref('dim_medicines_lot') }} l
+    left join lots l
         on l.medicine_import_detail_id = b.medicine_import_detail_id
+),
+deduped as (
+
+    select * except(rn)
+    from (
+        select
+            *,
+            row_number() over (
+                partition by prescription_medicine_detail_id
+                order by date_key desc, lot_key desc
+            ) as rn
+        from joined
+    )
+    where rn = 1
 )
 
 select
@@ -83,5 +132,5 @@ select
     medicine_key,
     lot_key,
     quantity_exported
-from joined
+from deduped
 where prescription_medicine_detail_id is not null

@@ -49,7 +49,7 @@
     cluster_by=['clinic_key', 'doctor_key']
 ) }}
 
-with p as (
+with p_raw as (
   select
     cast(id as int64) as prescription_id,
     cast(clinic_id as int64) as clinic_id,
@@ -66,6 +66,20 @@ with p as (
       from {{ this }}
     )
   {% endif %}
+),
+p as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (
+        partition by prescription_id
+        order by prescription_ts desc
+      ) as rn
+    from p_raw
+    where prescription_id is not null
+  )
+  where rn = 1
 ),
 
 base as (
@@ -103,14 +117,32 @@ rooms as (
     from {{ ref('dim_clinic_rooms') }}
   )
   where rn = 1
+),
+final as (
+  select
+    base.*,
+    r.room_id
+  from base
+  left join rooms as r
+    on r.clinic_key = base.clinic_key
+   and r.doctor_key = base.doctor_key
+),
+deduped as (
+  select * except(rn)
+  from (
+    select
+      *,
+      row_number() over (
+        partition by prescription_id
+        order by prescription_date_key desc, room_id desc
+      ) as rn
+    from final
+  )
+  where rn = 1
 )
 
 select
-  base.*,
-  r.room_id
-from base
-left join rooms as r
-  on r.clinic_key = base.clinic_key
- and r.doctor_key = base.doctor_key
-where base.prescription_id is not null
+  *
+from deduped
+where prescription_id is not null
 
