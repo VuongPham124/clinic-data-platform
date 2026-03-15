@@ -218,3 +218,4 @@ streaming_alert/debezium/application.properties
 streaming_alert/debezium/gcp-sa.json*
 streaming_alert/debezium/**/*.json
 streaming_alert/debezium/data/
+"gcs.json" 
