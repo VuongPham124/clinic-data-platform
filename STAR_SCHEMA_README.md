@@ -1,6 +1,6 @@
-# Star Schema (dbt)
+# Star Schema Reference (dbt)
 
-Tài liệu này tóm tắt star schema cho các model chính trong `dbt/models` (đặc biệt các model gold/platinum bạn đang làm).
+This document summarizes the star schema for the main models in `dbt/models` (particularly the gold/platinum models in active development).
 
 ## 1) Platinum Star Schemas
 
@@ -196,7 +196,7 @@ erDiagram
     REV_FACT_BOOKINGS }o--|| DIM_DATE : booking_date_key
 ```
 
-## 2) Gold Models Mapped To Stars
+## 2) Gold Models Mapped to Stars
 
 ```mermaid
 flowchart LR
@@ -237,9 +237,8 @@ flowchart LR
     DCD2 --> G4
 ```
 
-## 3) Ghi chú nhanh
+## 3) Quick Notes
 
-- `fact_*_valid` là lớp fact đã lọc chất lượng dữ liệu và là nguồn chính cho gold.
-- `clinic_key` ở các fact clinic đang join qua `dim_clinics.admin_user_id` (theo chuẩn bạn đang áp dụng).
-- Nhánh `rev_*` là nhánh revenue online riêng, dùng `rev_dim_doctors` và `rev_dim_patients`.
-
+- `fact_*_valid` is the quality-filtered fact layer and is the primary source for gold models.
+- `clinic_key` in clinic fact tables joins via `dim_clinics.admin_user_id` (as per the current convention).
+- The `rev_*` branch is a separate online revenue branch using `rev_dim_doctors` and `rev_dim_patients`.

@@ -1,4 +1,4 @@
-﻿# Data Pipeline Performance Optimization Strategy
+﻿# Performance Optimization Strategy
 
 ## Objective
 This document provides a detailed performance optimization strategy for the current workspace data flow:

@@ -1,51 +1,51 @@
 # streaming_alert
 
-Realtime alert flow (muc tieu <= 1 phut) cho CDC bang `public.clinic_bookings`.
+Real-time alert flow (target latency <= 1 minute) for CDC on `public.clinic_bookings`.
 
-## Kien truc va luong xu ly
+## Architecture and Processing Flow
 
 ```text
-Postgres (self-host)
+Postgres (self-hosted)
   -> Debezium (CDC slot: datastream_slot_streamalert, table: public.clinic_bookings)
   -> Pub/Sub topic: raw-cdc-events
-  -> Dataflow Streaming detector (window 1 phut + rules spike/cancel ratio)
+  -> Dataflow Streaming detector (1-minute window + spike/cancel ratio rules)
   -> Pub/Sub topic: business-alerts
   -> Pub/Sub push subscription (OIDC) -> Cloud Run /pubsub/push
   -> Orchestrator
-       - dedup + cooldown theo alert_key
-       - ghi state hien tai vao Firestore: alert_state
-       - ghi lich su bat bien vao BigQuery: ops_monitor.alert_history
-       - gui notification: webhook va/hoac email SMTP
+       - dedup + cooldown by alert_key
+       - writes current state to Firestore: alert_state
+       - writes immutable history to BigQuery: ops_monitor.alert_history
+       - sends notifications: webhook and/or SMTP email
 ```
 
-### Vai tro tung thanh phan
+### Component Roles
 
-- **Debezium**  
-  Doc WAL logical decoding tu Postgres, chi stream thay doi moi (khong snapshot cu), va dua su kien CDC sang `raw-cdc-events`.
+- **Debezium**
+  Reads WAL logical decoding from Postgres, streams only new changes (no historical snapshot), and pushes CDC events to `raw-cdc-events`.
 
-- **Dataflow Streaming detector**  
-  Tieu thu `raw-cdc-events`, tinh toan theo cua so 1 phut, ap dung rule detect (booking spike, cancellation ratio spike), va phat sinh `alert_event` sang `business-alerts`.
+- **Dataflow Streaming Detector**
+  Consumes `raw-cdc-events`, computes over 1-minute windows, applies detection rules (booking spike, cancellation ratio spike), and emits `alert_event` to `business-alerts`.
 
-- **Pub/Sub business-alerts (push)**  
-  Day `alert_event` den Cloud Run endpoint `/pubsub/push` bang OIDC token (service account invoker).
+- **Pub/Sub business-alerts (push)**
+  Pushes `alert_event` to the Cloud Run `/pubsub/push` endpoint using an OIDC token (invoker service account).
 
-- **Cloud Run Orchestrator**  
-  Xu ly su kien alert theo transaction:
-  1) doc/update state atomically trong Firestore de tranh race condition  
-  2) quyet dinh co emit hay bi cooldown  
-  3) ghi BigQuery history de audit/truy vet  
-  4) neu emitted=true thi gui webhook/email
+- **Cloud Run Orchestrator**
+  Processes alert events transactionally:
+  1. Reads/updates state atomically in Firestore to prevent race conditions.
+  2. Decides whether to emit or suppress (cooldown).
+  3. Writes to BigQuery history for audit/traceability.
+  4. If `emitted=true`, sends webhook/email notification.
 
-### Du lieu trong Firestore vs BigQuery
+### Data: Firestore vs BigQuery
 
-- **Firestore `alert_state`**: current state theo `alert_key` (last_seen_at, last_sent_at, cooldown_seconds, payload moi nhat).  
-- **BigQuery `ops_monitor.alert_history`**: immutable event log (alert_id, alert_key, severity, payload_json, emitted, created_at) phuc vu audit va bao cao.
+- **Firestore `alert_state`**: current state per `alert_key` (last_seen_at, last_sent_at, cooldown_seconds, latest payload).
+- **BigQuery `ops_monitor.alert_history`**: immutable event log (alert_id, alert_key, severity, payload_json, emitted, created_at) for audit and reporting.
 
-## Cau truc thu muc
+## Directory Structure
 
 - `debezium/`
-  - `application.properties` (config thuc te)
-  - `application.properties.example` (mau)
+  - `application.properties` (active config)
+  - `application.properties.example` (template)
 - `dataflow/`
   - `alert_detector_pipeline.py`
   - `requirements.txt`
@@ -63,7 +63,7 @@ Postgres (self-host)
 
 - Project: `wata-clinicdataplatform-gcp`
 - Region: `us-central1`
-- APIs:
+- APIs required:
   - `pubsub.googleapis.com`
   - `run.googleapis.com`
   - `dataflow.googleapis.com`
@@ -71,9 +71,9 @@ Postgres (self-host)
   - `artifactregistry.googleapis.com`
   - `firestore.googleapis.com`
   - `bigquery.googleapis.com`
-- Firestore database `(default)` da duoc tao.
+- Firestore `(default)` database must already be created.
 
-## 2) Tao resource nen tang
+## 2) Create Foundation Resources
 
 ### 2.1 Pub/Sub
 
@@ -85,7 +85,7 @@ gcloud pubsub subscriptions create raw-cdc-events-sub \
   --topic=raw-cdc-events
 ```
 
-### 2.2 BigQuery history table
+### 2.2 BigQuery History Table
 
 ```bash
 bq --location=us-central1 query --use_legacy_sql=false < streaming_alert/bq/create_alert_history.sql
@@ -93,14 +93,14 @@ bq --location=us-central1 query --use_legacy_sql=false < streaming_alert/bq/crea
 
 ## 3) Deploy Cloud Run Orchestrator
 
-### 3.1 Tao secret SMTP password (Gmail App Password)
+### 3.1 Create SMTP Password Secret (Gmail App Password)
 
 ```bash
 gcloud secrets create smtp-password --replication-policy=automatic
 echo YOUR_GMAIL_APP_PASSWORD | gcloud secrets versions add smtp-password --data-file=-
 ```
 
-### 3.2 Deploy script (email den anhtuan962002@gmail.com)
+### 3.2 Deploy Script
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File streaming_alert/scripts/deploy_orchestrator.ps1 `
@@ -119,9 +119,9 @@ powershell -ExecutionPolicy Bypass -File streaming_alert/scripts/deploy_orchestr
   -EmailPasswordSecretName "smtp-password"
 ```
 
-### 3.3 Tao push subscription vao Cloud Run
+### 3.3 Create Push Subscription to Cloud Run
 
-Lay URL service:
+Get the service URL:
 
 ```bash
 gcloud run services describe stream-alert-orchestrator \
@@ -130,7 +130,7 @@ gcloud run services describe stream-alert-orchestrator \
   --format="value(status.url)"
 ```
 
-Tao push sub:
+Create the push subscription:
 
 ```bash
 gcloud pubsub subscriptions delete business-alerts-push-sub --project=wata-clinicdataplatform-gcp
@@ -143,9 +143,9 @@ gcloud pubsub subscriptions create business-alerts-push-sub \
   --push-auth-token-audience=https://<cloud-run-url>/pubsub/push
 ```
 
-Luu y: service Cloud Run duoc deploy voi `--no-allow-unauthenticated` va endpoint `/pubsub/push` bat buoc bearer token hop le.
+Note: the Cloud Run service is deployed with `--no-allow-unauthenticated` — the `/pubsub/push` endpoint requires a valid bearer token.
 
-## 4) Start Dataflow (khong can cai apache_beam tren local)
+## 4) Start Dataflow (No Local apache_beam Installation Required)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File streaming_alert/scripts/submit_dataflow_via_cloudbuild.ps1 `
@@ -161,23 +161,23 @@ powershell -ExecutionPolicy Bypass -File streaming_alert/scripts/submit_dataflow
   -MinSampleForRatio 1
 ```
 
-Neu gap loi `ZONE_RESOURCE_POOL_EXHAUSTED` o mot zone (vi du `us-central1-c`), doi `-WorkerZone` sang zone khac trong cung region (`us-central1-a`, `us-central1-b`, `us-central1-f`) va submit lai.
+If you encounter `ZONE_RESOURCE_POOL_EXHAUSTED` in a zone (e.g. `us-central1-c`), change `-WorkerZone` to another zone in the same region (`us-central1-a`, `us-central1-b`, `us-central1-f`) and resubmit.
 
-## 5) Config va run Debezium local Docker
+## 5) Configure and Run Debezium (Local Docker)
 
 File: `streaming_alert/debezium/application.properties`
 
-Yeu cau quan trong:
+Key requirements:
 - `debezium.source.slot.name=datastream_slot_streamalert`
 - `debezium.source.table.include.list=public.clinic_bookings`
-- `debezium.source.snapshot.mode=no_data` (chi lay thay doi moi)
-- offset/schema history phai la file path:
+- `debezium.source.snapshot.mode=no_data` (new changes only)
+- Offset/schema history must be file paths (not directories):
   - `/debezium/data/offsets.dat`
   - `/debezium/data/schemahistory.dat`
-- publication mode:
-  - neu DB da co `dbz_publication` all-tables, dung `debezium.source.publication.autocreate.mode=all_tables`
+- Publication mode:
+  - If the DB already has a `dbz_publication` for all tables, use `debezium.source.publication.autocreate.mode=all_tables`
 
-Chay container:
+Run the container:
 
 ```cmd
 cd /d D:\watasoft_intern\data-demo-final\streaming_alert\debezium
@@ -193,22 +193,22 @@ docker run -d --name debezium-stream-alert --restart unless-stopped ^
   quay.io/debezium/server:2.7
 ```
 
-Theo doi log:
+Monitor logs:
 
 ```cmd
 docker logs -f debezium-stream-alert
 ```
 
-## 6) Verify end-to-end
+## 6) End-to-End Verification
 
-1. Insert/update/delete tren `public.clinic_bookings`.
-2. Check raw CDC:
+1. Insert/update/delete on `public.clinic_bookings`.
+2. Check raw CDC events:
 
 ```bash
 gcloud pubsub subscriptions pull raw-cdc-events-sub --auto-ack --limit 5
 ```
 
-3. Check Cloud Run log:
+3. Check Cloud Run logs:
 
 ```bash
 gcloud run services logs read stream-alert-orchestrator \
@@ -217,7 +217,7 @@ gcloud run services logs read stream-alert-orchestrator \
   --limit 100
 ```
 
-4. Check BQ history:
+4. Check BigQuery history:
 
 ```sql
 SELECT *
@@ -226,31 +226,33 @@ ORDER BY created_at DESC
 LIMIT 50;
 ```
 
-## 7) Tam ngung pipeline
+## 7) Pausing the Pipeline
 
-- Debezium:
+- Stop Debezium:
 
 ```cmd
 docker stop debezium-stream-alert
 ```
 
-- Dataflow streaming:
+- Drain the Dataflow streaming job:
 
 ```bash
 gcloud dataflow jobs list --region=us-central1 --project=wata-clinicdataplatform-gcp
 gcloud dataflow jobs drain <JOB_ID> --region=us-central1 --project=wata-clinicdataplatform-gcp
 ```
 
-## 8) Troubleshooting nhanh
+## 8) Quick Troubleshooting
 
-- `topic.prefix value is invalid`: thieu `debezium.source.topic.prefix`.
-- `Is a directory`: offset/history path dang tro vao thu muc, khong phai file.
-- `default credentials not found`: chua mount/cau hinh `GOOGLE_APPLICATION_CREDENTIALS`.
-- `File does not exist /secrets/gcp-sa.json`: mount sai path key.
-- `resource=streamalert.public.clinic_bookings not found`: chua route topic hoac topic chua ton tai.
-- `publication ... already active`: doi `publication.autocreate.mode=all_tables` hoac quan ly publication tren DB.
+| Error | Cause / Fix |
+|---|---|
+| `topic.prefix value is invalid` | Missing `debezium.source.topic.prefix` |
+| `Is a directory` | Offset/history path points to a directory, not a file |
+| `default credentials not found` | `GOOGLE_APPLICATION_CREDENTIALS` not mounted or configured |
+| `File does not exist /secrets/gcp-sa.json` | Incorrect key mount path |
+| `resource=streamalert.public.clinic_bookings not found` | Topic not routed or does not exist yet |
+| `publication ... already active` | Change `publication.autocreate.mode=all_tables` or manage the publication directly on the DB |
 
-## Bao mat
+## Security
 
-- Khong commit plaintext credentials vao git.
-- Dung Secret Manager cho SMTP password va cac secret khac.
+- Do not commit plaintext credentials to git.
+- Use Secret Manager for SMTP passwords and all other secrets.

@@ -1,62 +1,62 @@
-﻿# DBT Data Model Documentation
+# DBT Data Model Documentation
 
-## 1) Muc tieu
-Tai lieu nay mo ta chi tiet cac model trong `dbt/` de Data Engineer va Data Analyst co the:
-- Hieu dung business meaning cua tung model.
-- Biet grain (do chi tiet), key, lineage, va rule lam sach.
-- Danh gia nhanh chat luong va rui ro van hanh.
+## 1) Objective
+This document describes in detail the models in `dbt/` so that Data Engineers and Data Analysts can:
+- Understand the business meaning of each model.
+- Know the grain, keys, lineage, and cleaning rules.
+- Quickly assess data quality and operational risks.
 
-Phan vi: `models/platinum` va `models/gold` (bo qua `models/example`).
+Scope: `models/platinum` and `models/gold` (excluding `models/example`).
 
-## 2) Kien truc tong the
-- `silver_curated` (source): du lieu nghiep vu raw-curated.
-- `platinum` (dbt models): dim/fact da chuan hoa, co tach `valid`/`invalid` cho nhom fact quan trong.
-- `gold` (dbt marts): KPI/aggregate phuc vu dashboard va phan tich.
+## 2) Overall Architecture
+- `silver_curated` (source): raw-curated business data.
+- `platinum` (dbt models): normalized dims/facts with `valid`/`invalid` split for key fact groups.
+- `gold` (dbt marts): KPIs/aggregates serving dashboards and analysis.
 
-Nguon duoc khai bao tai:
+Sources are declared in:
 - `models/sources/src_silver.yml`
 - `models/sources/src_platinum.yml`
 
-## 3) Quy uoc chung trong project
-- Khoa surrogate dung `abs(farm_fingerprint(...))` cho `*_key`.
-- Date key dung dinh dang `INT64 yyyymmdd`.
-- Nhieu fact lon dung `incremental + merge`.
-- Pattern chat luong du lieu:
-  - `fact_xxx`: ban goc da transform.
-  - `fact_xxx_valid`: tap hop le de downstream su dung.
-  - `fact_xxx_invalid`: tap loi + cot `invalid_reason`.
+## 3) Project-wide Conventions
+- Surrogate keys use `abs(farm_fingerprint(...))` for `*_key`.
+- Date keys use `INT64 yyyymmdd` format.
+- Large facts use `incremental + merge`.
+- Data quality pattern:
+  - `fact_xxx`: base transformed table.
+  - `fact_xxx_valid`: clean subset for downstream use.
+  - `fact_xxx_invalid`: error rows + `invalid_reason` column.
 
-## 3.1) Incremental Merge: cach hoat dong trong project nay
+## 3.1) Incremental Merge: How It Works in This Project
 
-### Co che chung
+### General Mechanism
 - `materialized='incremental'` + `incremental_strategy='merge'`.
-- Lan dau: dbt tao bang day du (full load cho model do).
-- Cac lan sau: dbt chi lay tap du lieu moi/gan day (theo dieu kien `is_incremental()` trong SQL), sau do `MERGE` vao bang dich.
-- `unique_key` quyet dinh logic upsert:
-  - Trung key: `UPDATE`.
-  - Chua co key: `INSERT`.
+- First run: dbt creates the full table (full load for that model).
+- Subsequent runs: dbt only processes new/recent data (via `is_incremental()` condition in SQL), then `MERGE` into the target table.
+- `unique_key` determines upsert logic:
+  - Matching key: `UPDATE`.
+  - New key: `INSERT`.
 
-### Cua so tai xu ly (reprocessing window)
-- Phan lon model dang reprocess cua so 31 ngay (`max(key) - 31`) de bat late-arriving records.
-- Cac model aggregate theo thang/tuan thuong reprocess 1 chu ky truoc:
-  - Theo thang: `max(month_start_date_key) - 100` (lui 1 thang key dang `yyyymmdd`).
-  - Theo tuan: `max(week_start_date_key) - 100` (lui 1 tuan theo moc date key).
+### Reprocessing Window
+- Most models reprocess a 31-day window (`max(key) - 31`) to capture late-arriving records.
+- Monthly/weekly aggregate models typically reprocess 1 prior cycle:
+  - Monthly: `max(month_start_date_key) - 100` (steps back 1 month in `yyyymmdd` key format).
+  - Weekly: `max(week_start_date_key) - 100` (steps back 1 week by date key).
 
-### Partition va cluster (anh huong hieu nang merge)
-- Nhieu model incremental da co `partition_by` + `cluster_by` de:
-  - Han che scan khi merge.
-  - Tang toc do truy van theo key nghiep vu (`clinic_key`, `doctor_key`, `medicine_key`...).
-- Luu y: dang dung partition range tren `INT64 date_key`; can theo doi gioi han partition cua BigQuery.
+### Partitioning and Clustering (Performance Impact on Merge)
+- Many incremental models include `partition_by` + `cluster_by` to:
+  - Limit scan during merge.
+  - Speed up queries by business keys (`clinic_key`, `doctor_key`, `medicine_key`, etc.).
+- Note: currently using range partition on `INT64 date_key`; monitor for BigQuery partition count limits.
 
-### Trade-off van hanh
-- Uu diem:
-  - Giam chi phi va thoi gian so voi full rebuild.
-  - Van sua duoc du lieu tre den trong cua so reprocessing.
-- Han che:
-  - Neu du lieu den tre hon cua so (VD >31 ngay) se can full-refresh hoac backfill co chu dich.
-  - Neu `unique_key` khong on dinh co the gay duplicate/overwrite sai.
+### Operational Trade-offs
+- Advantages:
+  - Lower cost and faster runtime compared to full rebuilds.
+  - Late-arriving data within the reprocessing window is still corrected.
+- Limitations:
+  - Data arriving later than the window (e.g., >31 days) requires a full-refresh or intentional backfill.
+  - An unstable `unique_key` can cause incorrect duplicates or overwrites.
 
-### Danh sach model dang dung incremental merge
+### Models Currently Using Incremental Merge
 - Platinum:
   - `fact_operational_clinic_bookings`
   - `fact_operational_clinic_bookings_valid`
@@ -80,267 +80,268 @@ Nguon duoc khai bao tai:
 ### 4.1 Dimensions (Core)
 
 #### `dim_clinics`
-- Grain: 1 dong / clinic (`clinic_id`).
+- Grain: 1 row per clinic (`clinic_id`).
 - Source: `silver.clinics`.
-- Key chinh: `clinic_key`, `clinic_id`.
-- Cot nghiep vu: `clinic_name`, `clinic_address`, `is_active`, `admin_user_id`, `open_time`, `close_time`.
-- Lam sach: dedup theo `clinic_id`.
+- Keys: `clinic_key`, `clinic_id`.
+- Business columns: `clinic_name`, `clinic_address`, `is_active`, `admin_user_id`, `open_time`, `close_time`.
+- Cleaning: dedup by `clinic_id`.
 
 #### `dim_clinic_doctors`
-- Grain: 1 dong / doctor (`doctor_id`).
+- Grain: 1 row per doctor (`doctor_id`).
 - Source: `silver.clinic_doctors`.
-- Key: `doctor_key`, `doctor_id`.
-- Cot nghiep vu: `doctor_name`, `clinic_doctor_id`.
-- Lam sach: dedup theo `doctor_id`.
+- Keys: `doctor_key`, `doctor_id`.
+- Business columns: `doctor_name`, `clinic_doctor_id`.
+- Cleaning: dedup by `doctor_id`.
 
 #### `dim_clinic_patients`
-- Grain: 1 dong / patient (`patient_id`).
+- Grain: 1 row per patient (`patient_id`).
 - Source: `silver.clinic_patients`.
-- Key: `patient_key`, `patient_id`.
-- Cot nghiep vu: `patient_user_id`, `clinic_patient_id`.
-- Lam sach: group theo `patient_id`, lay `any_value` cho cac cot con lai.
+- Keys: `patient_key`, `patient_id`.
+- Business columns: `patient_user_id`, `clinic_patient_id`.
+- Cleaning: group by `patient_id`, take `any_value` for remaining columns.
 
 #### `dim_clinic_rooms`
-- Grain: 1 dong / room (`room_id`).
+- Grain: 1 row per room (`room_id`).
 - Source: `silver.clinic_rooms`.
-- Key lien ket: `clinic_key`, `doctor_key`, `room_id`.
-- Cot nghiep vu: `room_name`.
-- Lam sach: dedup theo `room_id`.
+- Join keys: `clinic_key`, `doctor_key`, `room_id`.
+- Business columns: `room_name`.
+- Cleaning: dedup by `room_id`.
 
 #### `dim_date`
-- Grain: 1 dong / ngay.
-- Sinh du lieu bang `generate_date_array(2015-01-01 -> 2035-12-31)`.
+- Grain: 1 row per day.
+- Generated using `generate_date_array(2015-01-01 -> 2035-12-31)`.
 - Key: `date_key`.
-- Cot quan trong: `full_date`, `year`, `month`, `week_of_year`, `is_weekend`, `month_start_date_key`.
+- Key columns: `full_date`, `year`, `month`, `week_of_year`, `is_weekend`, `month_start_date_key`.
 
 #### `dim_medicines`
-- Grain: 1 dong / medicine (`medicine_id`).
+- Grain: 1 row per medicine (`medicine_id`).
 - Source: `silver.medicines`.
-- Key: `medicine_key`, `medicine_id`.
-- Cot nghiep vu: `medicine_name`, `code`, `medicine_type`, `medicine_group`, `unit`, `manufacturer`, `vat`.
+- Keys: `medicine_key`, `medicine_id`.
+- Business columns: `medicine_name`, `code`, `medicine_type`, `medicine_group`, `unit`, `manufacturer`, `vat`.
 
 #### `dim_medicines_lot`
-- Grain: 1 dong / lo nhap (`medicine_import_detail_id`).
+- Grain: 1 row per import lot (`medicine_import_detail_id`).
 - Source: `silver.medicine_import_details`.
-- Key: `lot_key`, `medicine_import_detail_id`.
-- Cot nghiep vu: `lot_number`, `manufacturing_date`, `expire_date`, `import_price`, `status`.
-- Lam sach: parse date theo nhieu format + `distinct`.
+- Keys: `lot_key`, `medicine_import_detail_id`.
+- Business columns: `lot_number`, `manufacturing_date`, `expire_date`, `import_price`, `status`.
+- Cleaning: multi-format date parsing + `distinct`.
 
 ### 4.2 Dimensions/Facts (Legacy Revenue)
 
 #### `rev_dim_doctors`
-- Grain: 1 dong / doctor (`doctor_id`).
+- Grain: 1 row per doctor (`doctor_id`).
 - Source: `silver.doctors` + `silver.public_users`.
-- Key: `doctor_key`, `doctor_id`.
-- Cot bo sung: `user_full_name`.
+- Keys: `doctor_key`, `doctor_id`.
+- Additional column: `user_full_name`.
 
 #### `rev_dim_patients`
-- Grain: 1 dong / patient (`patient_id`).
+- Grain: 1 row per patient (`patient_id`).
 - Source: `silver.patients`.
-- Key: `patient_key`, `patient_id`.
+- Keys: `patient_key`, `patient_id`.
 
 #### `rev_dim_prescription_medicines`
-- Grain: 1 dong / prescription_medicine.
+- Grain: 1 row per prescription medicine.
 - Source: `silver.prescription_medicines`.
-- Muc tieu: clean numeric (`clean_list_price`, `clean_unit_price`, `clean_vat_amount`) va parse `booking_date`.
+- Purpose: clean numeric fields (`clean_list_price`, `clean_unit_price`, `clean_vat_amount`) and parse `booking_date`.
 
 #### `rev_fact_bookings`
-- Grain: 1 dong / booking online (`silver.bookings.id`).
-- Key: `id` (goc), bo sung `doctor_key`, `patient_key`.
-- Metric chinh: `amaz_net_revenue`, `is_valid_online_revenue`, `is_suspicious_revenue_data`, `booking_status_name`.
+- Grain: 1 row per online booking (`silver.bookings.id`).
+- Key: `id` (source), with added `doctor_key`, `patient_key`.
+- Key metrics: `amaz_net_revenue`, `is_valid_online_revenue`, `is_suspicious_revenue_data`, `booking_status_name`.
 
 ### 4.3 Facts (Core)
 
 #### `fact_operational_clinic_bookings`
-- Grain: 1 dong / booking (`booking_id`).
+- Grain: 1 row per booking (`booking_id`).
 - Source: `silver.clinic_bookings`.
-- Key lien ket: `clinic_key`, `doctor_key`, `patient_key`, `room_id`.
+- Join keys: `clinic_key`, `doctor_key`, `patient_key`, `room_id`.
 - Time keys: `created_date_key`, `from_date_key`, `confirmed_date_key`, `finished_date_key`, `canceled_date_key`.
-- Metric/logic:
+- Metrics/logic:
   - `confirm_duration_sec`, `consult_duration_sec`.
   - Revenue fields: `service_amount`, `prescription_amount`, `commission_fee`, `voucher_amount`, `total_bill`, `amaz_revenue`, `clinic_net_revenue`.
   - Payment mapping: `payment_channel`, `paid_via_app`, `clinic_cash_received`.
-  - `is_revenue_eligible` theo `exam_status='finished'` va `payment_status='paid'`.
+  - `is_revenue_eligible` based on `exam_status='finished'` and `payment_status='paid'`.
 - Materialization: incremental merge.
 
 #### `fact_operational_clinic_bookings_valid`
-- Loc ban ghi du dieu kien downstream:
-  - key bat buoc non-null.
-  - duration bat buoc khi `is_completed=true`.
+- Filters rows meeting downstream requirements:
+  - All required keys non-null.
+  - Duration required when `is_completed=true`.
 - Materialization: incremental merge.
 
 #### `fact_operational_clinic_bookings_invalid`
-- Chua ban ghi loi + `invalid_reason`.
-- Ly do loi chinh: null key/date; completed nhung thieu duration.
+- Contains error rows + `invalid_reason`.
+- Main error reasons: null key/date; completed booking with missing duration.
 
 #### `fact_prescription`
-- Grain: 1 dong / prescription (`prescription_id`).
+- Grain: 1 row per prescription (`prescription_id`).
 - Source: `silver.prescriptions`.
-- Key lien ket: `clinic_key`, `doctor_key`, `room_id`.
-- Metric chinh: `price`, `price_included_vat`, `vat_amount`.
+- Join keys: `clinic_key`, `doctor_key`, `room_id`.
+- Key metrics: `price`, `price_included_vat`, `vat_amount`.
 - Materialization: incremental merge.
 
 #### `fact_prescription_valid` / `fact_prescription_invalid`
-- `valid`: giu ban ghi co day du key/date.
-- `invalid`: ban ghi loi + `invalid_reason`.
+- `valid`: retains rows with complete keys/dates.
+- `invalid`: error rows + `invalid_reason`.
 
 #### `fact_health_record`
-- Grain: 1 dong / health record (`health_record_id`).
+- Grain: 1 row per health record (`health_record_id`).
 - Source: `silver.health_records`.
-- Key: `clinic_key`, `record_date_key`.
-- Rule bo sung: map `patient_age` -> `age_group_key` (1..5).
+- Keys: `clinic_key`, `record_date_key`.
+- Additional rule: maps `patient_age` -> `age_group_key` (1..5).
 - Materialization: view.
 
 #### `fact_health_record_valid` / `fact_health_record_invalid`
-- Tach ban ghi hop le va ban ghi loi theo null checks (`health_record_id`, `clinic_key`, `record_date_key`, `age_group_key`).
+- Splits valid and error rows based on null checks (`health_record_id`, `clinic_key`, `record_date_key`, `age_group_key`).
 
 #### `fact_disease_record`
-- Grain: 1 dong / disease record (`disease_record_id`).
+- Grain: 1 row per disease record (`disease_record_id`).
 - Source: `silver.disease_records`.
-- Cot chinh: `health_record_id`, `disease_code`, `disease_name`.
+- Key columns: `health_record_id`, `disease_code`, `disease_name`.
 - Materialization: view.
 
 #### `fact_disease_record_valid` / `fact_disease_record_invalid`
-- Tach theo null checks (`disease_record_id`, `health_record_id`, `disease_code`).
+- Split based on null checks (`disease_record_id`, `health_record_id`, `disease_code`).
 
 #### `fact_inventory_import`
-- Grain: 1 dong / medicine import detail (`import_fact_id`).
+- Grain: 1 row per medicine import detail (`import_fact_id`).
 - Source: `silver.medicine_import_details` (`status='active'`).
-- Key lien ket: `date_key`, `clinic_key`, `medicine_key`, `lot_key`.
-- Metric chinh: `quantity_imported`, `initial_import_value`.
+- Join keys: `date_key`, `clinic_key`, `medicine_key`, `lot_key`.
+- Key metrics: `quantity_imported`, `initial_import_value`.
 - Materialization: incremental merge.
 
 #### `fact_inventory_import_valid` / `fact_inventory_import_invalid`
-- `valid`: non-null toan bo key chinh.
-- `invalid`: ban ghi loi + `invalid_reason`.
+- `valid`: all primary keys non-null.
+- `invalid`: error rows + `invalid_reason`.
 
 #### `fact_inventory_export`
-- Grain: 1 dong / prescription medicine detail (`export_fact_id`).
+- Grain: 1 row per prescription medicine detail (`export_fact_id`).
 - Source: `silver.prescription_medicine_details` + `silver.prescription_medicines`.
-- Key lien ket: `date_key`, `clinic_key`, `medicine_key`, `lot_key`.
+- Join keys: `date_key`, `clinic_key`, `medicine_key`, `lot_key`.
 - Metric: `quantity_exported`.
 - Materialization: incremental merge.
 
 #### `fact_inventory_export_valid` / `fact_inventory_export_invalid`
-- Tach du lieu hop le/khong hop le theo null checks.
+- Split into valid/invalid rows based on null checks.
 
 #### `fact_inventory_snapshot`
-- Grain: 1 dong / lot ton kho (`snapshot_fact_id` = `medicine_import_detail_id`).
-- Nguon logic:
-  - Import active tu `silver.medicine_import_details`.
-  - Tru di tong export theo lot tu `fact_inventory_export`.
-- Metric chinh:
+- Grain: 1 row per inventory lot (`snapshot_fact_id` = `medicine_import_detail_id`).
+- Logic source:
+  - Active imports from `silver.medicine_import_details`.
+  - Minus total exports per lot from `fact_inventory_export`.
+- Key metrics:
   - `current_quantity = quantity_imported - total_exported`.
   - `current_inventory_value = current_quantity * import_price`.
   - `days_to_expire`.
 - Materialization: view.
 
 #### `fact_inventory_snapshot_valid` / `fact_inventory_snapshot_invalid`
-- `valid`: non-null key + `current_quantity > 0`.
-- `invalid`: null key hoac `current_quantity <= 0`.
+- `valid`: non-null keys + `current_quantity > 0`.
+- `invalid`: null keys or `current_quantity <= 0`.
 
-## 5) Gold Models (Marts/KPI)
+## 5) Gold Models (Marts/KPIs)
 
 #### `gold_clinic_doctor_operational_efficiency_weekly`
-- Grain: 1 dong / clinic / tuan (`week_start_date_key`).
+- Grain: 1 row per clinic per week (`week_start_date_key`).
 - Input: `fact_operational_clinic_bookings_valid`, `dim_date`, `dim_clinics`.
-- KPI: `completed_booking_count`, `avg_confirm_duration_sec`, `avg_consult_duration_sec`, `cancellation_rate`.
+- KPIs: `completed_booking_count`, `avg_confirm_duration_sec`, `avg_consult_duration_sec`, `cancellation_rate`.
 
 #### `gold_clinic_visits_doctor_monthly`
-- Grain: 1 dong / clinic / thang.
+- Grain: 1 row per clinic per month.
 - KPI: `number_booking`.
 - Input: booking valid + dim date + dim clinic.
 
 #### `gold_clinic_patient_visits_monthly`
-- Grain: 1 dong / clinic / thang.
-- KPI:
-  - `new_visits`: patient co lan dau trong thang.
-  - `returning_visits`: patient quay lai.
+- Grain: 1 row per clinic per month.
+- KPIs:
+  - `new_visits`: patients with their first visit in the month.
+  - `returning_visits`: returning patients.
   - `retention_rate`.
 
 #### `gold_prescription_value_daily`
-- Grain: 1 dong / clinic / doctor / room / ngay.
-- KPI: `prescription_count`, `total_value`, `avg_price_effective`.
-- Rule gia: uu tien `price_included_vat`, fallback `price`.
+- Grain: 1 row per clinic / doctor / room / day.
+- KPIs: `prescription_count`, `total_value`, `avg_price_effective`.
+- Pricing rule: prioritizes `price_included_vat`, falls back to `price`.
 
 #### `gold_disease_top_by_clinic_age_weekly`
-- Grain: 1 dong / clinic / tuan / age_group / disease_code.
-- KPI: `total_occurrences`, `unique_records`.
+- Grain: 1 row per clinic / week / age_group / disease_code.
+- KPIs: `total_occurrences`, `unique_records`.
 - Input: `fact_health_record_valid` + `fact_disease_record_valid`.
 
 #### `gold_best_selling_items`
-- Grain: 1 dong / clinic_name / medicine_name / year / month.
-- KPI: `total_quantity_exported`, `rank` theo clinic-thang.
+- Grain: 1 row per clinic_name / medicine_name / year / month.
+- KPIs: `total_quantity_exported`, `rank` by clinic-month.
 
 #### `gold_low_stock_items`
-- Grain: 1 dong / clinic / medicine.
-- KPI: `total_current_quantity`, `items_sold_prev_month`, `is_low_stock`.
-- Rule canh bao: ton hien tai < ban thang truoc.
+- Grain: 1 row per clinic / medicine.
+- KPIs: `total_current_quantity`, `items_sold_prev_month`, `is_low_stock`.
+- Alert rule: current stock < previous month's sales.
 
 #### `gold_near_expiry_drugs`
-- Grain: 1 dong / lot.
-- KPI/flag: `days_to_expire`, `urgent_level` (`red/yellow/green`).
+- Grain: 1 row per lot.
+- KPIs/flags: `days_to_expire`, `urgent_level` (`red/yellow/green`).
 
 #### `gold_slow_moving_items`
-- Grain: 1 dong / lot ton kho.
-- KPI/flag: `days_in_stock`, `is_slow_moving`.
-- Rule: lot co ton > 0 va khong co giao dich xuat trong 3 thang gan nhat.
+- Grain: 1 row per inventory lot.
+- KPIs/flags: `days_in_stock`, `is_slow_moving`.
+- Rule: lots with stock > 0 and no export transactions in the last 3 months.
 
 #### `gold_visits_doctor_monthly`
-- Grain: 1 dong / doctor / thang (luong legacy online).
+- Grain: 1 row per doctor per month (legacy online flow).
 - KPI: `number_booking`.
 - Input: `rev_fact_bookings` + `rev_dim_doctors` + `dim_date`.
 
 #### `rev_gold_revenue`
-- Grain: 1 dong / booking / source_type (`OFFLINE` + `ONLINE`).
-- Muc tieu: hop nhat doanh thu online/offline vao mot mart.
-- KPI: `gross_revenue`, `amaz_revenue`, `partner_share`, `service_amount_only`, `medicine_amount_total`.
+- Grain: 1 row per booking per source_type (`OFFLINE` + `ONLINE`).
+- Purpose: unify online/offline revenue into a single mart.
+- KPIs: `gross_revenue`, `amaz_revenue`, `partner_share`, `service_amount_only`, `medicine_amount_total`.
 - Materialization: incremental merge.
 
-## 6) Mapping nhanh cho Data Analyst
+## 6) Quick Reference for Data Analysts
 
-### Cau hoi nghiep vu va model de dung
-- Hieu qua van hanh phong kham: `gold_clinic_doctor_operational_efficiency_weekly`.
-- Luong kham theo clinic-thang: `gold_clinic_visits_doctor_monthly`.
-- Benh nhan moi/quay lai: `gold_clinic_patient_visits_monthly`.
-- Gia tri ke don theo ngay: `gold_prescription_value_daily`.
-- Benh pho bien theo tuoi: `gold_disease_top_by_clinic_age_weekly`.
-- Ton kho/rui ro kho: `gold_low_stock_items`, `gold_near_expiry_drugs`, `gold_slow_moving_items`, `gold_best_selling_items`.
-- Doanh thu tong hop online/offline: `rev_gold_revenue`.
+### Business Questions and Recommended Models
+- Clinic operational efficiency: `gold_clinic_doctor_operational_efficiency_weekly`.
+- Visit volume by clinic per month: `gold_clinic_visits_doctor_monthly`.
+- New vs. returning patients: `gold_clinic_patient_visits_monthly`.
+- Prescription value by day: `gold_prescription_value_daily`.
+- Top diseases by age group: `gold_disease_top_by_clinic_age_weekly`.
+- Inventory risks: `gold_low_stock_items`, `gold_near_expiry_drugs`, `gold_slow_moving_items`, `gold_best_selling_items`.
+- Consolidated online/offline revenue: `rev_gold_revenue`.
 
-### Khi can truy vet du lieu goc
+### When Tracing Back to Source Data
 - Gold -> Platinum valid -> Platinum base -> Silver source.
-- Neu KPI bat thuong, check model `*_invalid` cung domain de tim root-cause.
+- If a KPI looks abnormal, check the corresponding `*_invalid` model in the same domain to find the root cause.
 
-## 7) Danh gia ky thuat va van hanh (DE view)
+## 7) Technical & Operational Assessment (DE View)
 
-### Diem manh
-- Da co star-schema ro rang (dim/fact).
-- Co tach `valid/invalid` cho cac fact trong yeu.
-- Nhieu fact/gold lon da dung incremental merge.
+### Strengths
+- Clear star schema structure (dim/fact).
+- `valid/invalid` split in place for critical facts.
+- Most large facts/gold models use incremental merge.
 
-### Rui ro / diem can luu y
-- Nhieu model partition theo `INT64 range` voi khoang `20000101 -> 21000101, interval=100`.
-- Cau hinh nay co the tao so partition kha lon; can theo doi loi BigQuery "possible partitions exceeding limit".
-- `fact_inventory_snapshot` dang la `view` va join `fact_inventory_export`; voi du lieu lon co the ton cost query.
-- `gold_clinic_doctor_operational_efficiency_weekly` dang tinh `cancellation_rate` voi dieu kien `canceled_date_key=10101`; can xac nhan day la quy uoc dung.
-- Project chua mo ta SLA, owner, freshness expectation cho tung model ngay trong schema docs.
+### Risks / Points to Watch
+- Many models use `INT64 range` partition with range `20000101 -> 21000101, interval=100`.
+- This configuration can generate a large number of partitions; monitor for BigQuery "possible partitions exceeding limit" errors.
+- `fact_inventory_snapshot` is a `view` that joins `fact_inventory_export`; this may be costly to query at large data volumes.
+- `gold_clinic_doctor_operational_efficiency_weekly` calculates `cancellation_rate` using condition `canceled_date_key=10101`; confirm this is the intended convention.
+- The project currently lacks SLA, owner, and freshness expectation definitions per model in the schema docs.
 
-### Goi y uu tien tiep theo
-- Chuyen sang partition theo cot `DATE` hoac theo month key de giam rui ro partition limit.
-- Bo sung `description` cho model va columns trong `schema.yml` de dbt docs day du hon.
-- Dat policy test severity ro rang (`error/warn`) theo impact business.
-- Bo sung exposure/dashboard mapping de trace tu BI ve model.
+### Suggested Next Priorities
+- Switch to `DATE` column partitioning or month-key partitioning to reduce partition limit risk.
+- Add `description` for models and columns in `schema.yml` for richer dbt docs.
+- Set explicit test severity policies (`error/warn`) based on business impact.
+- Add exposure/dashboard mapping to trace from BI back to models.
 
-## 8) Lenh chay thuong dung
+## 8) Common Commands
+
 - Build platinum:
   - `dbt build --target platinum --select path:models/platinum --profiles-dir . --project-dir .`
 - Build gold:
   - `dbt build --target gold --select path:models/gold --profiles-dir . --project-dir .`
-- Build mot model + downstream:
+- Build a single model and its downstream dependencies:
   - `dbt build --select +gold_clinic_patient_visits_monthly --profiles-dir . --project-dir .`
 
-## 9) File lien quan
+## 9) Related Files
 - `dbt/dbt_project.yml`
 - `dbt/profiles.yml`
 - `dbt/models/platinum/schema.yml`
